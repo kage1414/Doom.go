@@ -2,7 +2,7 @@ package engine
 
 import (
 	"image/color"
-	
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/font"
 )
@@ -61,7 +61,9 @@ type projectile struct {
 type gameState int
 
 const (
-	stateStart gameState = iota
+	stateMainMenu gameState = iota
+	stateOptions
+	stateStart
 	statePlaying
 	stateMenu
 	stateLevelClear
@@ -75,9 +77,20 @@ const (
 )
 
 type pickupMessage struct {
-	text      string
-	color     color.RGBA
-	timeLeft  float64
+	text     string
+	color    color.RGBA
+	timeLeft float64
+}
+
+type gameSettings struct {
+	fireRate    float64
+	bulletSpeed float64
+	levelCount  int
+}
+
+type menuState struct {
+	selectedOption  int
+	selectedSetting int
 }
 
 type Game struct {
@@ -111,9 +124,14 @@ type Game struct {
 	lastMouseX   int
 
 	face font.Face
-	
+
 	// Temporary pickup messages
 	pickupMessages []pickupMessage
+
+	// Game settings and menu state
+	settings   gameSettings
+	menu       menuState
+	shouldQuit bool
 }
 
 var _ ebiten.Game = (*Game)(nil)

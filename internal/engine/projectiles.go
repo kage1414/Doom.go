@@ -6,7 +6,7 @@ func (g *Game) firePlayerShot() {
 	dirx, diry := math.Cos(g.p.angle), math.Sin(g.p.angle)
 	g.bullets = append(g.bullets, &projectile{
 		pos:      vec2{g.p.pos.x + dirx*0.4, g.p.pos.y + diry*0.4},
-		vel:      vec2{dirx * playerShotSpd, diry * playerShotSpd},
+		vel:      vec2{dirx * g.settings.bulletSpeed, diry * g.settings.bulletSpeed},
 		ttl:      playerShotTTL,
 		friendly: true,
 		radius:   0.05,

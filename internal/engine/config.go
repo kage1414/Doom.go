@@ -67,9 +67,22 @@ const (
 	enemyShotTTL = 1.6
 
 	enemyKeepNear = 4.5
-	
+
 	// Pickup message duration
 	pickupMessageDuration = 2.0
+
+	// Default game settings
+	defaultFireRate    = 0.08
+	defaultBulletSpeed = 22.0
+	defaultLevelCount  = 5
+
+	// Settings ranges
+	minFireRate    = 0.02
+	maxFireRate    = 0.20
+	minBulletSpeed = 10.0
+	maxBulletSpeed = 40.0
+	minLevelCount  = 1
+	maxLevelCount  = 20
 )
 
 var (

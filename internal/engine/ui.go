@@ -19,6 +19,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.drawMinimap(screen)
 	}
 	switch g.state {
+	case stateMainMenu:
+		g.drawMainMenu(screen)
+	case stateOptions:
+		g.drawOptionsMenu(screen)
 	case stateStart:
 		g.drawStart(screen)
 	case stateMenu:
@@ -97,7 +101,7 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	text.Draw(dst, fmt.Sprintf("Defeated: %d", g.defeated), g.face, lx, ly, white)
 	ly += 18
 	text.Draw(dst, fmt.Sprintf("Remaining: %d", remaining), g.face, lx, ly, white)
-	
+
 	// Draw pickup messages
 	g.drawPickupMessages(dst)
 }
@@ -106,23 +110,110 @@ func (g *Game) drawPickupMessages(dst *ebiten.Image) {
 	if len(g.pickupMessages) == 0 {
 		return
 	}
-	
+
 	// Position messages in the center-right area of the screen
 	startX := ScreenW - 200
 	startY := 100
-	
+
 	for i, msg := range g.pickupMessages {
 		// Calculate alpha based on remaining time (fade out in last 0.5 seconds)
 		alpha := uint8(255)
 		if msg.timeLeft < 0.5 {
 			alpha = uint8(255 * (msg.timeLeft / 0.5))
 		}
-		
+
 		// Create color with alpha
 		msgColor := color.RGBA{msg.color.R, msg.color.G, msg.color.B, alpha}
-		
+
 		// Draw message with slight offset for multiple messages
 		y := startY + (i * 25)
 		text.Draw(dst, msg.text, g.face, startX, y, msgColor)
 	}
+}
+
+func (g *Game) drawMainMenu(dst *ebiten.Image) {
+	drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{0, 0, 0, 180})
+
+	w, h := 400, 300
+	x := (ScreenW - w) / 2
+	y := (ScreenH - h) / 2
+
+	drawRect(dst, g.pix, x, y, w, h, uiBox)
+	drawRect(dst, g.pix, x, y, w, 2, uiAccent)
+	drawRect(dst, g.pix, x, y+h-2, w, 2, uiAccent)
+	drawRect(dst, g.pix, x, y, 2, h, uiAccent)
+	drawRect(dst, g.pix, x+w-2, y, 2, h, uiAccent)
+
+	// Title
+	lx := x + 18
+	ly := y + 40
+	text.Draw(dst, "DOOMLIKE", g.face, lx, ly, uiAccent)
+	ly += 50
+
+	// Menu options
+	options := []string{"Start Game", "Options", "Quit"}
+	for i, option := range options {
+		color := white
+		if i == g.menu.selectedOption {
+			color = yellow
+			// Draw selection indicator
+			text.Draw(dst, ">", g.face, lx-20, ly, color)
+		}
+		text.Draw(dst, option, g.face, lx, ly, color)
+		ly += 30
+	}
+
+	// Instructions
+	ly += 20
+	text.Draw(dst, "Use ↑/↓ to navigate, Enter to select", g.face, lx, ly, gray)
+	ly += 20
+	text.Draw(dst, "Esc to quit", g.face, lx, ly, gray)
+}
+
+func (g *Game) drawOptionsMenu(dst *ebiten.Image) {
+	drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{0, 0, 0, 180})
+
+	w, h := 500, 350
+	x := (ScreenW - w) / 2
+	y := (ScreenH - h) / 2
+
+	drawRect(dst, g.pix, x, y, w, h, uiBox)
+	drawRect(dst, g.pix, x, y, w, 2, uiAccent)
+	drawRect(dst, g.pix, x, y+h-2, w, 2, uiAccent)
+	drawRect(dst, g.pix, x, y, 2, h, uiAccent)
+	drawRect(dst, g.pix, x+w-2, y, 2, h, uiAccent)
+
+	// Title
+	lx := x + 18
+	ly := y + 40
+	text.Draw(dst, "OPTIONS", g.face, lx, ly, uiAccent)
+	ly += 50
+
+	// Settings
+	settings := []struct {
+		name  string
+		value string
+	}{
+		{"Fire Rate:", fmt.Sprintf("%.2f sec", g.settings.fireRate)},
+		{"Bullet Speed:", fmt.Sprintf("%.0f", g.settings.bulletSpeed)},
+		{"Level Count:", fmt.Sprintf("%d", g.settings.levelCount)},
+	}
+
+	for i, setting := range settings {
+		color := white
+		if i == g.menu.selectedSetting {
+			color = yellow
+			// Draw selection indicator
+			text.Draw(dst, ">", g.face, lx-20, ly, color)
+		}
+		text.Draw(dst, setting.name, g.face, lx, ly, color)
+		text.Draw(dst, setting.value, g.face, lx+200, ly, color)
+		ly += 35
+	}
+
+	// Instructions
+	ly += 30
+	text.Draw(dst, "Use ↑/↓ to navigate, ←/→ to adjust", g.face, lx, ly, gray)
+	ly += 20
+	text.Draw(dst, "Esc to return to main menu", g.face, lx, ly, gray)
 }

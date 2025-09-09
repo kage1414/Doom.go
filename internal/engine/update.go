@@ -17,6 +17,11 @@ func (g *Game) Layout(outW, outH int) (int, int) {
 }
 
 func (g *Game) Update() error {
+	// Check for quit flag
+	if g.shouldQuit {
+		return ebiten.Termination
+	}
+
 	// Global Esc behavior
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		switch g.state {
@@ -26,10 +31,21 @@ func (g *Game) Update() error {
 			ebiten.SetCursorMode(ebiten.CursorModeVisible)
 		case stateMenu:
 			return ebiten.Termination
+		case stateOptions:
+			g.state = stateMainMenu
+			g.menu.selectedSetting = 0
 		}
 	}
 
 	switch g.state {
+	case stateMainMenu:
+		g.updateMainMenu()
+		return nil
+
+	case stateOptions:
+		g.updateOptionsMenu()
+		return nil
+
 	case stateStart:
 		// Choose total levels before starting
 		if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
@@ -190,7 +206,7 @@ func (g *Game) Update() error {
 
 		if (ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsKeyPressed(ebiten.KeySpace)) &&
 			g.p.cooldown <= 0 && g.p.ammo > 0 {
-			g.p.cooldown = shootCooldownSec
+			g.p.cooldown = g.settings.fireRate
 			g.p.muzzleTime = 0.06
 			g.p.ammo--
 			g.firePlayerShot()
@@ -273,7 +289,7 @@ func (g *Game) Update() error {
 			g.advanceLevelOrWin()
 			return nil
 		}
-		
+
 		// Update pickup messages
 		g.updatePickupMessages(dt)
 	}
@@ -301,4 +317,90 @@ func (g *Game) updatePickupMessages(dt float64) {
 		}
 	}
 	g.pickupMessages = nm
+}
+
+func (g *Game) updateMainMenu() {
+	// Navigate menu options
+	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
+		g.menu.selectedOption--
+		if g.menu.selectedOption < 0 {
+			g.menu.selectedOption = 2 // Wrap to last option
+		}
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
+		g.menu.selectedOption++
+		if g.menu.selectedOption > 2 {
+			g.menu.selectedOption = 0 // Wrap to first option
+		}
+	}
+
+	// Select option
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		switch g.menu.selectedOption {
+		case 0: // Start Game
+			g.totalLevels = g.settings.levelCount
+			g.level = 1
+			g.setupLevel(g.level, true)
+			g.state = statePlaying
+			g.mouseGrabbed = true
+			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+			g.lastMouseX = 0
+		case 1: // Options
+			g.state = stateOptions
+			g.menu.selectedSetting = 0
+		case 2: // Quit
+			g.shouldQuit = true
+		}
+	}
+}
+
+func (g *Game) updateOptionsMenu() {
+	// Navigate settings
+	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
+		g.menu.selectedSetting--
+		if g.menu.selectedSetting < 0 {
+			g.menu.selectedSetting = 2 // Wrap to last setting
+		}
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
+		g.menu.selectedSetting++
+		if g.menu.selectedSetting > 2 {
+			g.menu.selectedSetting = 0 // Wrap to first setting
+		}
+	}
+
+	// Adjust settings
+	if inpututil.IsKeyJustPressed(ebiten.KeyLeft) || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+		delta := 1.0
+		if inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+			delta = -1.0
+		}
+
+		switch g.menu.selectedSetting {
+		case 0: // Fire Rate
+			g.settings.fireRate += delta * 0.01
+			if g.settings.fireRate < minFireRate {
+				g.settings.fireRate = minFireRate
+			}
+			if g.settings.fireRate > maxFireRate {
+				g.settings.fireRate = maxFireRate
+			}
+		case 1: // Bullet Speed
+			g.settings.bulletSpeed += delta * 2.0
+			if g.settings.bulletSpeed < minBulletSpeed {
+				g.settings.bulletSpeed = minBulletSpeed
+			}
+			if g.settings.bulletSpeed > maxBulletSpeed {
+				g.settings.bulletSpeed = maxBulletSpeed
+			}
+		case 2: // Level Count
+			g.settings.levelCount += int(delta)
+			if g.settings.levelCount < minLevelCount {
+				g.settings.levelCount = minLevelCount
+			}
+			if g.settings.levelCount > maxLevelCount {
+				g.settings.levelCount = maxLevelCount
+			}
+		}
+	}
 }

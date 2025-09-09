@@ -11,12 +11,21 @@ import (
 
 func NewGame() *Game {
 	g := &Game{
-		state:           stateStart,
-		face:            basicfont.Face7x13,
-		level:           1,
-		totalLevels:     DefaultLevels,
-		minimap:         true,
-		pickupMessages:  make([]pickupMessage, 0),
+		state:          stateMainMenu,
+		face:           basicfont.Face7x13,
+		level:          1,
+		totalLevels:    DefaultLevels,
+		minimap:        true,
+		pickupMessages: make([]pickupMessage, 0),
+		settings: gameSettings{
+			fireRate:    defaultFireRate,
+			bulletSpeed: defaultBulletSpeed,
+			levelCount:  defaultLevelCount,
+		},
+		menu: menuState{
+			selectedOption:  0,
+			selectedSetting: 0,
+		},
 	}
 	g.fb = ebiten.NewImage(renderW, renderH)
 	g.pix = ebiten.NewImage(1, 1)
