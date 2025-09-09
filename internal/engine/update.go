@@ -16,17 +16,55 @@ func (g *Game) Layout(outW, outH int) (int, int) {
 }
 
 func (g *Game) Update() error {
+	// Global Esc behavior
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
-		if g.state == statePlaying {
+		switch g.state {
+		case statePlaying:
 			g.state = stateMenu
 			g.mouseGrabbed = false
 			ebiten.SetCursorMode(ebiten.CursorModeVisible)
-		} else if g.state == stateMenu {
+		case stateMenu:
 			return ebiten.Termination
 		}
 	}
 
 	switch g.state {
+	case stateStart:
+		// Choose total levels before starting
+		if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyRight) {
+			if g.totalLevels < MaxLevelCap {
+				g.totalLevels++
+			}
+		}
+		if inpututil.IsKeyJustPressed(ebiten.KeyDown) || inpututil.IsKeyJustPressed(ebiten.KeyLeft) {
+			if g.totalLevels > 1 {
+				g.totalLevels--
+			}
+		}
+		// Digit keys quick-set
+		for key := ebiten.Key0; key <= ebiten.Key9; key++ {
+			if inpututil.IsKeyJustPressed(key) {
+				n := int(key - ebiten.Key0)
+				if n == 0 {
+					n = 10
+				}
+				if n > MaxLevelCap {
+					n = MaxLevelCap
+				}
+				g.totalLevels = n
+			}
+		}
+		// Enter to begin
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+			g.level = 1
+			g.setupLevel(g.level, true)
+			g.state = statePlaying
+			g.mouseGrabbed = true
+			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+			g.lastMouseX = 0
+		}
+		return nil
+
 	case stateMenu:
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 			g.state = statePlaying
@@ -42,7 +80,7 @@ func (g *Game) Update() error {
 	case stateLevelClear:
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 			g.level++
-			if g.level > LevelMax {
+			if g.level > g.totalLevels {
 				g.state = stateWin
 				return nil
 			}
@@ -219,15 +257,7 @@ func (g *Game) Update() error {
 			}
 		}
 		if allDead {
-			if g.level >= LevelMax {
-				g.state = stateWin
-				g.mouseGrabbed = false
-				ebiten.SetCursorMode(ebiten.CursorModeVisible)
-			} else {
-				g.state = stateLevelClear
-				g.mouseGrabbed = false
-				ebiten.SetCursorMode(ebiten.CursorModeVisible)
-			}
+			g.advanceLevelOrWin()
 			return nil
 		}
 	}

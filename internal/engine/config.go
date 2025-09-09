@@ -11,8 +11,7 @@ const (
 
 	WallScale = 0.65
 
-	// Level system
-	LevelMax = 5
+	// Map-size reference points (the algorithm scales from these)
 	BaseMapW = 48
 	BaseMapH = 36
 	MaxMapW  = 96
@@ -24,6 +23,12 @@ const (
 	RoomMaxSize     = 10
 	MinRoomSpacing  = 1
 	SpawnSafeRadius = 6.0
+
+	// Caps / defaults
+	MaxLevelCap    = 20 // hard upper bound for selectable levels
+	DefaultLevels  = 5  // default selected level count if user doesn't change
+	BaseEnemyValue = 14 // baseline used by scaling algorithm (middle level ≈ this)
+	BaseFoodValue  = 16 // baseline pickups count (med+ammo) at middle level
 
 	fovDegrees = 75.0
 	moveSpeed  = 3.2
@@ -38,7 +43,7 @@ const (
 	shootCooldownSec = 0.08
 	playerMaxHP      = 100
 	playerStartHP    = 85
-	playerStartAmmo  = 36
+	playerStartAmmo  = 120
 	medkitHeal       = 25
 	ammoPickupAmt    = 32
 

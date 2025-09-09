@@ -11,10 +11,11 @@ import (
 
 func NewGame() *Game {
 	g := &Game{
-		state:   statePlaying,
-		face:    basicfont.Face7x13,
-		level:   1,
-		minimap: true,
+		state:       stateStart,
+		face:        basicfont.Face7x13,
+		level:       1,
+		totalLevels: DefaultLevels,
+		minimap:     true,
 	}
 	g.fb = ebiten.NewImage(renderW, renderH)
 	g.pix = ebiten.NewImage(1, 1)
@@ -22,39 +23,92 @@ func NewGame() *Game {
 	g.scaleX = float64(ScreenW) / float64(renderW)
 	g.scaleY = float64(ScreenH) / float64(renderH)
 	g.zbuf = make([]float64, renderW)
-	g.mouseGrabbed = true
+	g.mouseGrabbed = false // start screen: mouse free
 
 	g.initTextures()
-	g.setupLevel(g.level, true)
 	return g
 }
 
+// Piecewise scale: level 1 => 0.5x, middle => 1.0x, last => 3.0x
+func scaleForLevel(level, total int) float64 {
+	if total <= 1 {
+		return 1.0
+	}
+	mid := (total + 1) / 2 // middle index (1-based)
+	if level <= mid {
+		// 1..mid maps 0.5 -> 1.0
+		t := float64(level-1) / float64(mid-1)
+		if mid == 1 {
+			t = 1
+		}
+		return 0.5 + t*(1.0-0.5)
+	}
+	// mid..total maps 1.0 -> 3.0
+	t := float64(level-mid) / float64(total-mid)
+	if total == mid {
+		t = 1
+	}
+	return 1.0 + t*(3.0-1.0)
+}
+
+// Randomize within ±pct (e.g., pct=0.30 => ±30%)
+func jitter(val float64, pct float64, rng *rand.Rand) float64 {
+	delta := (rng.Float64()*2 - 1) * pct
+	return val * (1 + delta)
+}
+
+// clamp ints to >=1
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// setupLevel now uses piecewise scaling + jitter for map dims, enemies, and food
 func (g *Game) setupLevel(level int, fresh bool) {
-	lerp := func(a, b, t float64) int { return int(a + (b-a)*t + 0.5) }
 	if level < 1 {
 		level = 1
 	}
-	if level > LevelMax {
-		level = LevelMax
+	if level > g.totalLevels {
+		level = g.totalLevels
 	}
-	t := float64(level-1) / float64(LevelMax-1)
-
-	w := lerp(float64(BaseMapW), float64(MaxMapW), t)
-	h := lerp(float64(BaseMapH), float64(MaxMapH), t)
-
-	baseZ, maxZ := 5, 20
-	baseR, maxR := 2, 12
-	baseS, maxS := 1, 10
-	ez := lerp(float64(baseZ), float64(maxZ), t)
-	er := lerp(float64(baseR), float64(maxR), t)
-	es := lerp(float64(baseS), float64(maxS), t)
-
-	baseMed, minMed := 10, 4
-	baseAmmo, minAmmo := 12, 6
-	med := lerp(float64(baseMed), float64(minMed), t)
-	amm := lerp(float64(baseAmmo), float64(minAmmo), t)
 
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	// Map dimensions
+	scale := scaleForLevel(level, g.totalLevels)
+	targetW := jitter(float64(MaxMapW)*scale, 0.30, rng)
+	targetH := jitter(float64(MaxMapH)*scale, 0.30, rng)
+	w := maxInt(int(targetW+0.5), BaseMapW/2) // keep reasonable minimums
+	h := maxInt(int(targetH+0.5), BaseMapH/2)
+
+	// Enemy total (we'll split by type later)
+	targetEnemies := jitter(float64(BaseEnemyValue)*scale, 0.30, rng)
+	totalEnemies := maxInt(int(targetEnemies+0.5), 1)
+
+	// Food total (medkits + ammo)
+	targetFood := jitter(float64(BaseFoodValue)*scale, 0.30, rng)
+	totalFood := maxInt(int(targetFood+0.5), 1)
+
+	// Split enemies by type (Zombies 60%, Runners 25%, Shooters 15%)
+	ez := int(float64(totalEnemies) * 0.60)
+	er := int(float64(totalEnemies) * 0.25)
+	es := totalEnemies - ez - er
+	if ez < 0 {
+		ez = 0
+	}
+	if er < 0 {
+		er = 0
+	}
+	if es < 0 {
+		es = 0
+	}
+
+	// Split food 50/50 into medkits and ammo
+	med := totalFood / 2
+	amm := totalFood - med
+
 	grid, spawn, enemies, pickups := generateMap(w, h, rng, ez, er, es, med, amm)
 
 	g.mapW, g.mapH = w, h
@@ -81,7 +135,7 @@ func (g *Game) reset() {
 }
 
 func (g *Game) advanceLevelOrWin() {
-	if g.level >= LevelMax {
+	if g.level >= g.totalLevels {
 		g.state = stateWin
 		g.mouseGrabbed = false
 		ebiten.SetCursorMode(ebiten.CursorModeVisible)

@@ -19,6 +19,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		g.drawMinimap(screen)
 	}
 	switch g.state {
+	case stateStart:
+		g.drawStart(screen)
 	case stateMenu:
 		g.drawMenu(screen)
 	case stateLevelClear:
@@ -60,6 +62,7 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	drawRect(dst, g.pix, wx, wy, gw, gh, color.RGBA{40, 40, 40, 230})
 	drawRect(dst, g.pix, wx+gw/2-8, wy-20, 16, 24, color.RGBA{70, 70, 70, 230})
 
+	// health/ammo
 	barW := 220
 	barH := 10
 	bx := 12
@@ -83,7 +86,7 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	lx := ScreenW - 260
 	ly := 20
 	drawRect(dst, g.pix, lx-10, ly-16, 240, 56, color.RGBA{0, 0, 0, 160})
-	text.Draw(dst, fmt.Sprintf("Level: %d / %d", g.level, LevelMax), g.face, lx, ly, uiAccent)
+	text.Draw(dst, fmt.Sprintf("Level: %d / %d", g.level, g.totalLevels), g.face, lx, ly, uiAccent)
 	ly += 18
 	remaining := 0
 	for _, e := range g.enemies {

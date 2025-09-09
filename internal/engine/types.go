@@ -59,7 +59,8 @@ type projectile struct {
 type gameState int
 
 const (
-	statePlaying gameState = iota
+	stateStart gameState = iota
+	statePlaying
 	stateMenu
 	stateLevelClear
 	stateGameOver
@@ -82,6 +83,7 @@ type Game struct {
 	bullets []*projectile
 
 	level           int
+	totalLevels     int
 	defeated        int
 	levelEnemyTotal int
 
@@ -91,7 +93,6 @@ type Game struct {
 	scaleY float64
 	zbuf   []float64
 
-	// textures
 	wallTex *ebiten.Image
 	texW    int
 	texH    int
