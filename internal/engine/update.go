@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -26,13 +27,16 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		switch g.state {
 		case statePlaying:
-			g.state = stateMenu
+			g.state = stateInGameMenu
 			g.mouseGrabbed = false
 			ebiten.SetCursorMode(ebiten.CursorModeVisible)
+		case stateInGameMenu:
+			g.resetToMainMenu()
 		case stateMenu:
 			return ebiten.Termination
 		case stateOptions:
-			g.state = stateMainMenu
+			// Return to the previous state
+			g.state = g.previousState
 			g.menu.selectedSetting = 0
 		}
 	}
@@ -40,6 +44,10 @@ func (g *Game) Update() error {
 	switch g.state {
 	case stateMainMenu:
 		g.updateMainMenu()
+		return nil
+
+	case stateInGameMenu:
+		g.updateInGameMenu()
 		return nil
 
 	case stateOptions:
@@ -109,9 +117,15 @@ func (g *Game) Update() error {
 		}
 		return nil
 
-	case stateGameOver, stateWin:
+	case stateGameOver:
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 			g.reset()
+		}
+		return nil
+
+	case stateWin:
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+			g.resetToMainMenu()
 		}
 		return nil
 
@@ -346,6 +360,7 @@ func (g *Game) updateMainMenu() {
 			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
 			g.lastMouseX = 0
 		case 1: // Options
+			g.previousState = stateMainMenu
 			g.state = stateOptions
 			g.menu.selectedSetting = 0
 		case 2: // Quit
@@ -354,19 +369,71 @@ func (g *Game) updateMainMenu() {
 	}
 }
 
+func (g *Game) updateInGameMenu() {
+	// Navigate menu options
+	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
+		g.menu.selectedInGameOption--
+		if g.menu.selectedInGameOption < 0 {
+			g.menu.selectedInGameOption = 2 // Wrap to last option
+		}
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
+		g.menu.selectedInGameOption++
+		if g.menu.selectedInGameOption > 2 {
+			g.menu.selectedInGameOption = 0 // Wrap to first option
+		}
+	}
+
+	// Select option
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		switch g.menu.selectedInGameOption {
+		case 0: // Resume Game
+			g.state = statePlaying
+			g.mouseGrabbed = true
+			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+			g.lastMouseX = 0
+		case 1: // Options
+			g.previousState = stateInGameMenu
+			g.state = stateOptions
+			g.menu.selectedSetting = 0 // Reset to fire rate (valid for both contexts)
+		case 2: // Quit Game
+			g.resetToMainMenu()
+		}
+	}
+}
+
 func (g *Game) updateOptionsMenu() {
+	// Update mouse position
+	g.mouseX, g.mouseY = ebiten.CursorPosition()
+
+	// Calculate max setting index based on context
+	maxSetting := 1 // Fire rate (0) + Bullet speed (1)
+	if g.previousState == stateMainMenu {
+		maxSetting = 2 // Fire rate (0) + Bullet speed (1) + Level count (2)
+	}
+
+	// Ensure selected setting is valid for current context
+	if g.menu.selectedSetting > maxSetting {
+		g.menu.selectedSetting = maxSetting
+	}
+
 	// Navigate settings
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
 		g.menu.selectedSetting--
 		if g.menu.selectedSetting < 0 {
-			g.menu.selectedSetting = 2 // Wrap to last setting
+			g.menu.selectedSetting = maxSetting // Wrap to last setting
 		}
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
 		g.menu.selectedSetting++
-		if g.menu.selectedSetting > 2 {
+		if g.menu.selectedSetting > maxSetting {
 			g.menu.selectedSetting = 0 // Wrap to first setting
 		}
+	}
+
+	// Handle mouse clicks on fire rate slider
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && g.menu.selectedSetting == 0 {
+		g.handleSliderClick()
 	}
 
 	// Adjust settings
@@ -377,14 +444,15 @@ func (g *Game) updateOptionsMenu() {
 		}
 
 		switch g.menu.selectedSetting {
-		case 0: // Fire Rate
-			g.settings.fireRate += delta * 0.01
+		case 0: // Fire Rate (reversed: left = faster, right = slower)
+			g.settings.fireRate -= delta * 0.05
 			if g.settings.fireRate < minFireRate {
 				g.settings.fireRate = minFireRate
 			}
 			if g.settings.fireRate > maxFireRate {
 				g.settings.fireRate = maxFireRate
 			}
+			g.saveSettings()
 		case 1: // Bullet Speed
 			g.settings.bulletSpeed += delta * 2.0
 			if g.settings.bulletSpeed < minBulletSpeed {
@@ -393,14 +461,56 @@ func (g *Game) updateOptionsMenu() {
 			if g.settings.bulletSpeed > maxBulletSpeed {
 				g.settings.bulletSpeed = maxBulletSpeed
 			}
-		case 2: // Level Count
-			g.settings.levelCount += int(delta)
-			if g.settings.levelCount < minLevelCount {
-				g.settings.levelCount = minLevelCount
-			}
-			if g.settings.levelCount > maxLevelCount {
-				g.settings.levelCount = maxLevelCount
+			g.saveSettings()
+		case 2: // Level Count (only available from main menu)
+			if g.previousState == stateMainMenu {
+				g.settings.levelCount += int(delta)
+				if g.settings.levelCount < minLevelCount {
+					g.settings.levelCount = minLevelCount
+				}
+				if g.settings.levelCount > maxLevelCount {
+					g.settings.levelCount = maxLevelCount
+				}
+				g.saveSettings()
 			}
 		}
+	}
+}
+
+// saveSettings saves the current settings to the database
+func (g *Game) saveSettings() {
+	if g.db != nil {
+		if err := g.db.SaveSettings(&g.settings); err != nil {
+			log.Printf("Failed to save settings: %v", err)
+		}
+	}
+}
+
+// handleSliderClick handles mouse clicks on the fire rate slider
+func (g *Game) handleSliderClick() {
+	// Calculate slider bounds (matching the drawSlider function)
+	// These coordinates should match the slider position in drawOptionsMenu
+	sliderX := 18 + 18       // lx from drawOptionsMenu
+	sliderY := 40 + 50 + 20  // ly + 20 from drawOptionsMenu
+	sliderWidth := 400 - 200 // width - 200 from drawSlider
+
+	// Check if click is within slider bounds
+	if g.mouseX >= sliderX && g.mouseX <= sliderX+sliderWidth &&
+		g.mouseY >= sliderY && g.mouseY <= sliderY+8 {
+
+		// Calculate new value based on click position (center-out)
+		clickPos := float64(g.mouseX - sliderX)
+		normalizedPos := clickPos / float64(sliderWidth)
+		if normalizedPos < 0 {
+			normalizedPos = 0
+		}
+		if normalizedPos > 1 {
+			normalizedPos = 1
+		}
+
+		// Convert to fire rate value (reversed: left=fast, right=slow)
+		newFireRate := maxFireRate - normalizedPos*(maxFireRate-minFireRate)
+		g.settings.fireRate = newFireRate
+		g.saveSettings()
 	}
 }

@@ -5,12 +5,15 @@ import (
 	"log"
 	"os"
 
-	"github.com/hajimehoshi/ebiten/v2"
 	"doomlike/internal/engine"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 func main() {
 	g := engine.NewGame()
+	defer g.Close() // Ensure database is closed when game exits
+
 	ebiten.SetWindowSize(engine.ScreenW, engine.ScreenH)
 	ebiten.SetWindowTitle("DOOM.go — Sprites, Health Bars, Win/Lose (Esc: Menu)")
 	ebiten.SetWindowResizable(true)

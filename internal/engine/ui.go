@@ -21,6 +21,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	switch g.state {
 	case stateMainMenu:
 		g.drawMainMenu(screen)
+	case stateInGameMenu:
+		g.drawInGameMenu(screen)
 	case stateOptions:
 		g.drawOptionsMenu(screen)
 	case stateStart:
@@ -170,6 +172,45 @@ func (g *Game) drawMainMenu(dst *ebiten.Image) {
 	text.Draw(dst, "Esc to quit", g.face, lx, ly, gray)
 }
 
+func (g *Game) drawInGameMenu(dst *ebiten.Image) {
+	drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{0, 0, 0, 180})
+
+	w, h := 400, 250
+	x := (ScreenW - w) / 2
+	y := (ScreenH - h) / 2
+
+	drawRect(dst, g.pix, x, y, w, h, uiBox)
+	drawRect(dst, g.pix, x, y, w, 2, uiAccent)
+	drawRect(dst, g.pix, x, y+h-2, w, 2, uiAccent)
+	drawRect(dst, g.pix, x, y, 2, h, uiAccent)
+	drawRect(dst, g.pix, x+w-2, y, 2, h, uiAccent)
+
+	// Title
+	lx := x + 18
+	ly := y + 40
+	text.Draw(dst, "PAUSED", g.face, lx, ly, uiAccent)
+	ly += 50
+
+	// Menu options
+	options := []string{"Resume Game", "Options", "Quit Game"}
+	for i, option := range options {
+		color := white
+		if i == g.menu.selectedInGameOption {
+			color = yellow
+			// Draw selection indicator
+			text.Draw(dst, ">", g.face, lx-20, ly, color)
+		}
+		text.Draw(dst, option, g.face, lx, ly, color)
+		ly += 30
+	}
+
+	// Instructions
+	ly += 20
+	text.Draw(dst, "Use ↑/↓ to navigate, Enter to select", g.face, lx, ly, gray)
+	ly += 20
+	text.Draw(dst, "Esc to quit game", g.face, lx, ly, gray)
+}
+
 func (g *Game) drawOptionsMenu(dst *ebiten.Image) {
 	drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{0, 0, 0, 180})
 
@@ -189,19 +230,30 @@ func (g *Game) drawOptionsMenu(dst *ebiten.Image) {
 	text.Draw(dst, "OPTIONS", g.face, lx, ly, uiAccent)
 	ly += 50
 
-	// Settings
-	settings := []struct {
+	// Fire Rate Slider
+	g.drawSlider(dst, lx, ly, 400, 50, minFireRate, maxFireRate, g.settings.fireRate, "Fire Rate:", g.menu.selectedSetting == 0)
+	ly += 60
+
+	// Other settings (non-slider) - conditionally show level count
+	otherSettings := []struct {
 		name  string
 		value string
 	}{
-		{"Fire Rate:", fmt.Sprintf("%.2f sec", g.settings.fireRate)},
 		{"Bullet Speed:", fmt.Sprintf("%.0f", g.settings.bulletSpeed)},
-		{"Level Count:", fmt.Sprintf("%d", g.settings.levelCount)},
 	}
 
-	for i, setting := range settings {
+	// Only show level count if we came from the main menu
+	if g.previousState == stateMainMenu {
+		otherSettings = append(otherSettings, struct {
+			name  string
+			value string
+		}{"Level Count:", fmt.Sprintf("%d", g.settings.levelCount)})
+	}
+
+	for i, setting := range otherSettings {
+		settingIndex := i + 1 // Offset by 1 since fire rate is index 0
 		color := white
-		if i == g.menu.selectedSetting {
+		if settingIndex == g.menu.selectedSetting {
 			color = yellow
 			// Draw selection indicator
 			text.Draw(dst, ">", g.face, lx-20, ly, color)
@@ -215,5 +267,68 @@ func (g *Game) drawOptionsMenu(dst *ebiten.Image) {
 	ly += 30
 	text.Draw(dst, "Use ↑/↓ to navigate, ←/→ to adjust", g.face, lx, ly, gray)
 	ly += 20
+	text.Draw(dst, "Click on fire rate slider to set value", g.face, lx, ly, gray)
+	ly += 20
 	text.Draw(dst, "Esc to return to main menu", g.face, lx, ly, gray)
+}
+
+// drawSlider draws a slider with ticks at 10% increments
+func (g *Game) drawSlider(dst *ebiten.Image, x, y, width, height int, minVal, maxVal, currentVal float64, label string, selected bool) {
+	// Draw label
+	labelColor := white
+	if selected {
+		labelColor = yellow
+		// Draw selection indicator
+		text.Draw(dst, ">", g.face, x-20, y, labelColor)
+	}
+	text.Draw(dst, label, g.face, x, y, labelColor)
+
+	// Calculate slider position
+	sliderY := y + 20
+	sliderHeight := 8
+	sliderWidth := width - 200 // Leave space for value display
+
+	// Draw slider track background
+	drawRect(dst, g.pix, x, sliderY, sliderWidth, sliderHeight, color.RGBA{60, 60, 60, 255})
+
+	// Calculate current position (0.0 to 1.0) - reversed so left is fast, right is slow
+	normalizedVal := (maxVal - currentVal) / (maxVal - minVal)
+	if normalizedVal < 0 {
+		normalizedVal = 0
+	}
+	if normalizedVal > 1 {
+		normalizedVal = 1
+	}
+
+	// Draw slider fill (left side)
+	fillWidth := int(float64(sliderWidth) * normalizedVal)
+	if fillWidth > 0 {
+		drawRect(dst, g.pix, x, sliderY, fillWidth, sliderHeight, color.RGBA{100, 150, 255, 255})
+	}
+
+	// Draw slider handle
+	handleX := x + fillWidth - 4
+	if handleX < x {
+		handleX = x
+	}
+	if handleX > x+sliderWidth-8 {
+		handleX = x + sliderWidth - 8
+	}
+	drawRect(dst, g.pix, handleX, sliderY-2, 8, sliderHeight+4, color.RGBA{200, 200, 200, 255})
+
+	// Draw ticks at each 0.05s increment
+	tickColor := color.RGBA{120, 120, 120, 255}
+	for val := minVal; val <= maxVal; val += 0.05 {
+		// Calculate position for this value (reversed)
+		valNormalized := (maxVal - val) / (maxVal - minVal)
+		if valNormalized >= 0 && valNormalized <= 1 {
+			tickX := x + int(float64(sliderWidth)*valNormalized)
+			tickY := sliderY + sliderHeight + 2
+			drawRect(dst, g.pix, tickX, tickY, 1, 4, tickColor)
+		}
+	}
+
+	// Draw value
+	valueText := fmt.Sprintf("%.2fs", currentVal)
+	text.Draw(dst, valueText, g.face, x+sliderWidth+10, y+15, white)
 }

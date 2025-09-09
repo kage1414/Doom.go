@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"log"
 	"math"
 	"math/rand"
 	"time"
@@ -10,6 +11,29 @@ import (
 )
 
 func NewGame() *Game {
+	// Initialize database
+	db, err := NewDatabase()
+	if err != nil {
+		log.Printf("Failed to initialize database: %v", err)
+		// Continue with default settings if database fails
+		db = nil
+	}
+
+	// Load settings from database or use defaults
+	settings := gameSettings{
+		fireRate:    defaultFireRate,
+		bulletSpeed: defaultBulletSpeed,
+		levelCount:  defaultLevelCount,
+	}
+
+	if db != nil {
+		if loadedSettings, err := db.LoadSettings(); err == nil {
+			settings = *loadedSettings
+		} else {
+			log.Printf("Failed to load settings from database: %v", err)
+		}
+	}
+
 	g := &Game{
 		state:          stateMainMenu,
 		face:           basicfont.Face7x13,
@@ -17,15 +41,13 @@ func NewGame() *Game {
 		totalLevels:    DefaultLevels,
 		minimap:        true,
 		pickupMessages: make([]pickupMessage, 0),
-		settings: gameSettings{
-			fireRate:    defaultFireRate,
-			bulletSpeed: defaultBulletSpeed,
-			levelCount:  defaultLevelCount,
-		},
+		settings:       settings,
 		menu: menuState{
-			selectedOption:  0,
-			selectedSetting: 0,
+			selectedOption:       0,
+			selectedSetting:      0,
+			selectedInGameOption: 0,
 		},
+		db: db,
 	}
 	g.fb = ebiten.NewImage(renderW, renderH)
 	g.pix = ebiten.NewImage(1, 1)
@@ -37,6 +59,15 @@ func NewGame() *Game {
 
 	g.initTextures()
 	return g
+}
+
+// Close cleans up resources when the game exits
+func (g *Game) Close() {
+	if g.db != nil {
+		if err := g.db.Close(); err != nil {
+			log.Printf("Failed to close database: %v", err)
+		}
+	}
 }
 
 // Piecewise scale: level 1 => 0.5x, middle => 1.0x, last => 3.0x
@@ -142,6 +173,35 @@ func (g *Game) setupLevel(level int, fresh bool) {
 func (g *Game) reset() {
 	ng := NewGame()
 	*g = *ng
+}
+
+func (g *Game) resetToMainMenu() {
+	// Save current settings before reset
+	currentSettings := g.settings
+
+	// Reset game state
+	g.level = 1
+	g.p.score = 0
+	g.p.hp = 100
+	g.p.ammo = 30
+	g.state = stateMainMenu
+	g.mouseGrabbed = false
+	ebiten.SetCursorMode(ebiten.CursorModeVisible)
+
+	// Reset menu state
+	g.menu.selectedOption = 0
+	g.menu.selectedSetting = 0
+	g.menu.selectedInGameOption = 0
+	g.shouldQuit = false
+
+	// Clear pickup messages
+	g.pickupMessages = make([]pickupMessage, 0)
+
+	// Restore settings
+	g.settings = currentSettings
+
+	// Setup first level
+	g.setupLevel(g.level, true)
 }
 
 func (g *Game) advanceLevelOrWin() {

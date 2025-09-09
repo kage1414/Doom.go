@@ -72,13 +72,13 @@ const (
 	pickupMessageDuration = 2.0
 
 	// Default game settings
-	defaultFireRate    = 0.08
+	defaultFireRate    = 0.275 // Center value (0.05 + 0.5) / 2
 	defaultBulletSpeed = 22.0
 	defaultLevelCount  = 5
 
 	// Settings ranges
-	minFireRate    = 0.02
-	maxFireRate    = 0.20
+	minFireRate    = 0.05
+	maxFireRate    = 0.5
 	minBulletSpeed = 10.0
 	maxBulletSpeed = 40.0
 	minLevelCount  = 1

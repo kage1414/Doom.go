@@ -65,6 +65,7 @@ const (
 	stateOptions
 	stateStart
 	statePlaying
+	stateInGameMenu
 	stateMenu
 	stateLevelClear
 	stateGameOver
@@ -89,8 +90,9 @@ type gameSettings struct {
 }
 
 type menuState struct {
-	selectedOption  int
-	selectedSetting int
+	selectedOption       int
+	selectedSetting      int
+	selectedInGameOption int
 }
 
 type Game struct {
@@ -122,6 +124,8 @@ type Game struct {
 	minimap      bool
 	mouseGrabbed bool
 	lastMouseX   int
+	mouseX       int
+	mouseY       int
 
 	face font.Face
 
@@ -129,9 +133,13 @@ type Game struct {
 	pickupMessages []pickupMessage
 
 	// Game settings and menu state
-	settings   gameSettings
-	menu       menuState
-	shouldQuit bool
+	settings      gameSettings
+	menu          menuState
+	shouldQuit    bool
+	previousState gameState
+
+	// Database for persistent settings
+	db *Database
 }
 
 var _ ebiten.Game = (*Game)(nil)
