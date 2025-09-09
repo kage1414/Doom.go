@@ -62,11 +62,8 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 		}
 	}
 
-	gw, gh := 140, 60
-	wx := (ScreenW - gw) / 2
-	wy := ScreenH - gh - 8
-	drawRect(dst, g.pix, wx, wy, gw, gh, color.RGBA{40, 40, 40, 230})
-	drawRect(dst, g.pix, wx+gw/2-8, wy-20, 16, 24, color.RGBA{70, 70, 70, 230})
+	// Draw detailed gun
+	g.drawDetailedGun(dst)
 
 	// health/ammo
 	barW := 220
@@ -331,4 +328,62 @@ func (g *Game) drawSlider(dst *ebiten.Image, x, y, width, height int, minVal, ma
 	// Draw value
 	valueText := fmt.Sprintf("%.2fs", currentVal)
 	text.Draw(dst, valueText, g.face, x+sliderWidth+10, y+15, white)
+}
+
+// drawDetailedGun draws a more detailed gun sprite in the bottom center
+func (g *Game) drawDetailedGun(dst *ebiten.Image) {
+	// Gun dimensions and position
+	gw, gh := 160, 80
+	wx := (ScreenW - gw) / 2
+	wy := ScreenH - gh - 8
+
+	// Gun colors
+	gunMetal := color.RGBA{80, 80, 80, 255}      // Dark gray metal
+	gunDark := color.RGBA{50, 50, 50, 255}       // Darker metal
+	gunLight := color.RGBA{120, 120, 120, 255}   // Lighter metal
+	gunWood := color.RGBA{139, 69, 19, 255}      // Brown wood
+	gunTrigger := color.RGBA{200, 200, 200, 255} // Silver trigger
+
+	// Main gun body (stock and barrel)
+	drawRect(dst, g.pix, wx+20, wy+20, 120, 25, gunMetal)
+
+	// Gun stock (rear part)
+	drawRect(dst, g.pix, wx+10, wy+25, 20, 15, gunWood)
+
+	// Barrel (front part)
+	drawRect(dst, g.pix, wx+140, wy+22, 15, 21, gunDark)
+
+	// Barrel tip
+	drawRect(dst, g.pix, wx+155, wy+24, 5, 17, gunLight)
+
+	// Gun handle/grip
+	drawRect(dst, g.pix, wx+25, wy+45, 15, 25, gunWood)
+
+	// Trigger guard
+	drawRect(dst, g.pix, wx+35, wy+50, 8, 12, gunMetal)
+
+	// Trigger
+	drawRect(dst, g.pix, wx+37, wy+52, 4, 8, gunTrigger)
+
+	// Gun sight (rear)
+	drawRect(dst, g.pix, wx+130, wy+18, 3, 6, gunLight)
+
+	// Gun sight (front)
+	drawRect(dst, g.pix, wx+150, wy+20, 2, 4, gunLight)
+
+	// Magazine/ammo clip
+	drawRect(dst, g.pix, wx+30, wy+35, 12, 15, gunDark)
+
+	// Magazine details
+	drawRect(dst, g.pix, wx+32, wy+37, 8, 2, gunLight)
+	drawRect(dst, g.pix, wx+32, wy+40, 8, 2, gunLight)
+	drawRect(dst, g.pix, wx+32, wy+43, 8, 2, gunLight)
+
+	// Gun details and highlights
+	drawRect(dst, g.pix, wx+25, wy+22, 1, 21, gunLight)  // Barrel highlight
+	drawRect(dst, g.pix, wx+135, wy+22, 1, 21, gunLight) // Barrel highlight
+
+	// Add some depth with shadows
+	drawRect(dst, g.pix, wx+20, wy+45, 120, 2, color.RGBA{0, 0, 0, 100})
+	drawRect(dst, g.pix, wx+20, wy+20, 2, 25, color.RGBA{0, 0, 0, 100})
 }

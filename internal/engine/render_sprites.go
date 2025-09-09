@@ -200,19 +200,15 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 			if endX > renderW-1 {
 				endX = renderW - 1
 			}
-			colorBody := green
-			if pk.ptype == pickupAmmo {
-				colorBody = yellow
-			}
 			y := centerY - size/2
-			for x := startX; x <= endX; x++ {
-				if dist > g.zbuf[x] {
-					continue
-				}
-				drawRect(dst, g.pix, x, y, 1, size, colorBody)
-				if x == startX || x == endX {
-					drawRect(dst, g.pix, x, y, 1, size, color.RGBA{0, 0, 0, 120})
-				}
+
+			// Draw different sprites based on pickup type
+			if pk.ptype == pickupAmmo {
+				// Draw bullet-like shape
+				g.drawBulletSprite(dst, startX, endX, y, size, dist)
+			} else {
+				// Draw first aid kit
+				g.drawMedkitSprite(dst, startX, endX, y, size, dist)
 			}
 
 		case spriteBullet:
@@ -255,6 +251,125 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 				}
 				drawRect(dst, g.pix, x, y, 1, size, c)
 			}
+		}
+	}
+}
+
+// drawBulletSprite draws a skinny vertical bullet pickup sprite
+func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, dist float64) {
+	// Bullet colors
+	bulletBody := color.RGBA{180, 180, 180, 255} // Silver/gray
+	bulletTip := color.RGBA{220, 220, 220, 255}  // Lighter silver
+	bulletBase := color.RGBA{140, 140, 140, 255} // Darker silver
+
+	// Make the bullet skinny - reduce width to 1/3 of original
+	bulletWidth := (endX - startX) / 3
+	if bulletWidth < 1 {
+		bulletWidth = 1
+	}
+	bulletStartX := startX + (endX-startX-bulletWidth)/2
+	bulletEndX := bulletStartX + bulletWidth
+
+	for x := bulletStartX; x <= bulletEndX; x++ {
+		// Ensure x is within zbuf bounds
+		if x < 0 || x >= len(g.zbuf) {
+			continue
+		}
+		if dist > g.zbuf[x] {
+			continue
+		}
+
+		// Calculate relative position within sprite (0.0 to 1.0)
+		relPos := float64(x-bulletStartX) / float64(bulletEndX-bulletStartX)
+
+		// Vertical bullet shape: narrow tip, wider body, narrow base
+		var spriteHeight int
+		if relPos < 0.2 {
+			// Tip - narrow
+			spriteHeight = size / 3
+		} else if relPos < 0.7 {
+			// Body - full width
+			spriteHeight = size
+		} else {
+			// Base - narrow
+			spriteHeight = size / 2
+		}
+
+		// Choose color based on position
+		var colorBody color.Color
+		if relPos < 0.2 {
+			colorBody = bulletTip
+		} else if relPos < 0.7 {
+			colorBody = bulletBody
+		} else {
+			colorBody = bulletBase
+		}
+
+		// Draw the bullet segment
+		bulletY := y + (size-spriteHeight)/2
+		drawRect(dst, g.pix, x, bulletY, 1, spriteHeight, colorBody)
+
+		// Add outline
+		if x == bulletStartX || x == bulletEndX {
+			drawRect(dst, g.pix, x, y, 1, size, color.RGBA{0, 0, 0, 120})
+		}
+	}
+}
+
+// drawMedkitSprite draws a first aid kit pickup sprite
+func (g *Game) drawMedkitSprite(dst *ebiten.Image, startX, endX, y, size int, dist float64) {
+	// First aid kit colors
+	kitBody := color.RGBA{255, 255, 255, 255}   // White
+	kitCross := color.RGBA{200, 50, 50, 255}    // Red cross
+	kitBorder := color.RGBA{200, 200, 200, 255} // Light gray border
+
+	for x := startX; x <= endX; x++ {
+		// Ensure x is within zbuf bounds
+		if x < 0 || x >= len(g.zbuf) {
+			continue
+		}
+		if dist > g.zbuf[x] {
+			continue
+		}
+
+		// Calculate relative position within sprite (0.0 to 1.0)
+		relPos := float64(x-startX) / float64(endX-startX)
+
+		// First aid kit shape: rectangular with rounded edges
+		var spriteHeight int
+		if relPos < 0.1 || relPos > 0.9 {
+			// Rounded edges
+			spriteHeight = size * 3 / 4
+		} else {
+			// Full height
+			spriteHeight = size
+		}
+
+		// Draw the kit body
+		kitY := y + (size-spriteHeight)/2
+		drawRect(dst, g.pix, x, kitY, 1, spriteHeight, kitBody)
+
+		// Add white cross in the center
+		if relPos >= 0.3 && relPos <= 0.7 {
+			// Vertical cross line
+			crossY := y + size/4
+			crossH := size / 2
+			drawRect(dst, g.pix, x, crossY, 1, crossH, kitCross)
+
+			// Horizontal cross line
+			crossX := x
+			crossW := 1
+			if x > startX && x < endX {
+				crossW = 3
+				crossX = x - 1
+			}
+			centerY := y + size/2
+			drawRect(dst, g.pix, crossX, centerY-1, crossW, 3, kitCross)
+		}
+
+		// Add border
+		if x == startX || x == endX {
+			drawRect(dst, g.pix, x, y, 1, size, kitBorder)
 		}
 	}
 }
