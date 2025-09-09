@@ -3,8 +3,8 @@ package engine
 import "image/color"
 
 const (
-	ScreenW = 960
-	ScreenH = 600
+	ScreenW = 1920
+	ScreenH = 1080
 
 	renderW = 320
 	renderH = 200
