@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -234,10 +235,22 @@ func (g *Game) Update() error {
 							g.p.hp = playerMaxHP
 						}
 						pk.took = true
+						// Add pickup message
+						g.pickupMessages = append(g.pickupMessages, pickupMessage{
+							text:     fmt.Sprintf("+%d Health", medkitHeal),
+							color:    green,
+							timeLeft: pickupMessageDuration,
+						})
 					}
 				case pickupAmmo:
 					g.p.ammo += ammoPickupAmt
 					pk.took = true
+					// Add pickup message
+					g.pickupMessages = append(g.pickupMessages, pickupMessage{
+						text:     fmt.Sprintf("+%d Ammo", ammoPickupAmt),
+						color:    yellow,
+						timeLeft: pickupMessageDuration,
+					})
 				}
 			}
 		}
@@ -260,6 +273,9 @@ func (g *Game) Update() error {
 			g.advanceLevelOrWin()
 			return nil
 		}
+		
+		// Update pickup messages
+		g.updatePickupMessages(dt)
 	}
 	return nil
 }
@@ -273,4 +289,16 @@ func (g *Game) moveWithCollision(dx, dy float64) {
 	if !g.isSolid(int(math.Floor(g.p.pos.x)), int(math.Floor(newY))) {
 		g.p.pos.y = newY
 	}
+}
+
+func (g *Game) updatePickupMessages(dt float64) {
+	// Update message timers and remove expired messages
+	nm := g.pickupMessages[:0]
+	for _, msg := range g.pickupMessages {
+		msg.timeLeft -= dt
+		if msg.timeLeft > 0 {
+			nm = append(nm, msg)
+		}
+	}
+	g.pickupMessages = nm
 }

@@ -97,4 +97,32 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	text.Draw(dst, fmt.Sprintf("Defeated: %d", g.defeated), g.face, lx, ly, white)
 	ly += 18
 	text.Draw(dst, fmt.Sprintf("Remaining: %d", remaining), g.face, lx, ly, white)
+	
+	// Draw pickup messages
+	g.drawPickupMessages(dst)
+}
+
+func (g *Game) drawPickupMessages(dst *ebiten.Image) {
+	if len(g.pickupMessages) == 0 {
+		return
+	}
+	
+	// Position messages in the center-right area of the screen
+	startX := ScreenW - 200
+	startY := 100
+	
+	for i, msg := range g.pickupMessages {
+		// Calculate alpha based on remaining time (fade out in last 0.5 seconds)
+		alpha := uint8(255)
+		if msg.timeLeft < 0.5 {
+			alpha = uint8(255 * (msg.timeLeft / 0.5))
+		}
+		
+		// Create color with alpha
+		msgColor := color.RGBA{msg.color.R, msg.color.G, msg.color.B, alpha}
+		
+		// Draw message with slight offset for multiple messages
+		y := startY + (i * 25)
+		text.Draw(dst, msg.text, g.face, startX, y, msgColor)
+	}
 }

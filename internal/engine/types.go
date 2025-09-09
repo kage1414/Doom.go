@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"image/color"
+	
 	"github.com/hajimehoshi/ebiten/v2"
 	"golang.org/x/image/font"
 )
@@ -72,6 +74,12 @@ const (
 	tWall  = 1
 )
 
+type pickupMessage struct {
+	text      string
+	color     color.RGBA
+	timeLeft  float64
+}
+
 type Game struct {
 	mapW, mapH int
 	world      []int
@@ -103,6 +111,9 @@ type Game struct {
 	lastMouseX   int
 
 	face font.Face
+	
+	// Temporary pickup messages
+	pickupMessages []pickupMessage
 }
 
 var _ ebiten.Game = (*Game)(nil)

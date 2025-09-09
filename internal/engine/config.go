@@ -67,6 +67,9 @@ const (
 	enemyShotTTL = 1.6
 
 	enemyKeepNear = 4.5
+	
+	// Pickup message duration
+	pickupMessageDuration = 2.0
 )
 
 var (
