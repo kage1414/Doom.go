@@ -9,43 +9,42 @@ const (
 	renderW = 320
 	renderH = 200
 
-	// Procedural map size
-	DefaultMapW = 64
-	DefaultMapH = 48
+	WallScale = 0.65
+
+	// Level system
+	LevelMax = 5
+	BaseMapW = 48
+	BaseMapH = 36
+	MaxMapW  = 96
+	MaxMapH  = 72
 
 	// Generation controls
-	MaxRooms        = 22
+	MaxRooms        = 32
 	RoomMinSize     = 4
 	RoomMaxSize     = 10
-	MinRoomSpacing  = 1   // gap between rooms
-	SpawnSafeRadius = 6.0 // tiles around spawn without enemies
-
-	EnemiesZombie  = 10
-	EnemiesRunner  = 6
-	EnemiesShooter = 6
-
-	PickupsMedkit = 8
-	PickupsAmmo   = 10
+	MinRoomSpacing  = 1
+	SpawnSafeRadius = 6.0
 
 	fovDegrees = 75.0
 	moveSpeed  = 3.2
 	sprintMul  = 1.8
 	rotSpeed   = 2.6
 	mouseSens  = 0.002
-	maxDepth   = 32.0
+
+	maxDepth = 32.0
 
 	minimapOnAtStart = true
 
-	// fire rate
 	shootCooldownSec = 0.08
 	playerMaxHP      = 100
 	playerStartHP    = 85
-	playerStartAmmo  = 360
+	playerStartAmmo  = 36
 	medkitHeal       = 25
 	ammoPickupAmt    = 32
-	playerShotSpd    = 10.0
-	playerShotTTL    = 1.0
-	playerShotDmg    = 1
+
+	playerShotSpd = 22.0
+	playerShotTTL = 1.0
+	playerShotDmg = 1
 
 	zombieSpeed  = 1.35
 	zombieHP     = 3
@@ -58,7 +57,7 @@ const (
 	touchDPS     = 10.0
 
 	enemyShotCD  = 1.6
-	enemyShotSpd = 6.0
+	enemyShotSpd = 12.0
 	enemyShotDmg = 12
 	enemyShotTTL = 1.6
 
@@ -66,11 +65,6 @@ const (
 )
 
 var (
-	colNorth = color.RGBA{180, 30, 30, 255}
-	colSouth = color.RGBA{220, 50, 50, 255}
-	colWest  = color.RGBA{30, 30, 180, 255}
-	colEast  = color.RGBA{50, 50, 220, 255}
-
 	floorA = color.RGBA{26, 28, 26, 255}
 	floorB = color.RGBA{36, 40, 36, 255}
 	ceilA  = color.RGBA{10, 12, 16, 255}

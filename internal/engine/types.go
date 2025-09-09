@@ -61,6 +61,7 @@ type gameState int
 const (
 	statePlaying gameState = iota
 	stateMenu
+	stateLevelClear
 	stateGameOver
 	stateWin
 )
@@ -73,20 +74,27 @@ const (
 type Game struct {
 	mapW, mapH int
 	world      []int
-
-	// cells the player can reach (flood-filled from spawn)
-	reachable []bool
+	reachable  []bool
 
 	p       player
 	enemies []*enemy
 	pickups []*pickup
 	bullets []*projectile
 
+	level           int
+	defeated        int
+	levelEnemyTotal int
+
 	fb     *ebiten.Image
 	pix    *ebiten.Image
 	scaleX float64
 	scaleY float64
 	zbuf   []float64
+
+	// textures
+	wallTex *ebiten.Image
+	texW    int
+	texH    int
 
 	state        gameState
 	minimap      bool

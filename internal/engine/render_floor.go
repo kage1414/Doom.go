@@ -19,7 +19,7 @@ func (g *Game) drawFloorCeil(dst *ebiten.Image) {
 	for sy := 0; sy < renderH; sy++ {
 		row := float64(sy) - half
 		if row == 0 {
-			continue
+			row = 1e-6
 		}
 		invert := 1.0
 		if row < 0 {
@@ -44,16 +44,6 @@ func (g *Game) drawFloorCeil(dst *ebiten.Image) {
 
 			cellX := int(math.Floor(wx))
 			cellY := int(math.Floor(wy))
-
-			// If world cell is out of bounds or NOT reachable from player, don't render it.
-			if cellX < 0 || cellY < 0 || cellX >= g.mapW || cellY >= g.mapH ||
-				!g.reachable[cellY*g.mapW+cellX] {
-				dst.Set(sx, sy, black)
-				floorX += stepX
-				floorY += stepY
-				continue
-			}
-
 			parity := (cellX+cellY)&1 == 0
 			baseF := floorA
 			if !parity {

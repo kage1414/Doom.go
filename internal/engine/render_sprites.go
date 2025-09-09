@@ -38,7 +38,6 @@ type spriteRef struct {
 func (g *Game) drawSprites(dst *ebiten.Image) {
 	refs := make([]spriteRef, 0, len(g.enemies)+len(g.pickups)+len(g.bullets))
 
-	// collect enemies
 	for i, e := range g.enemies {
 		if e.dead {
 			continue
@@ -48,7 +47,6 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 		refs = append(refs, spriteRef{kind: spriteEnemy, idx: i, dist: math.Hypot(dx, dy)})
 	}
 
-	// collect pickups
 	for i, pk := range g.pickups {
 		if pk.took {
 			continue
@@ -58,7 +56,6 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 		refs = append(refs, spriteRef{kind: spritePickup, idx: i, dist: math.Hypot(dx, dy)})
 	}
 
-	// collect bullets
 	for i := range g.bullets {
 		b := g.bullets[i]
 		dx := b.pos.x - g.p.pos.x
@@ -66,10 +63,10 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 		refs = append(refs, spriteRef{kind: spriteBullet, idx: i, dist: math.Hypot(dx, dy)})
 	}
 
-	// sort far -> near so nearer sprites overwrite farther ones
 	sort.Slice(refs, func(i, j int) bool { return refs[i].dist > refs[j].dist })
 
 	fov := deg2rad(fovDegrees)
+	centerY := renderH / 2
 
 	for _, r := range refs {
 		switch r.kind {
@@ -122,12 +119,11 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 				headCol = white
 			}
 
-			yTop := renderH/2 - size/2
+			yTop := centerY - size/2
 			headH := int(float64(size) * 0.3)
 			bodyH := size - headH
 
 			for x := startX; x <= endX; x++ {
-				// don't draw behind a nearer wall
 				if dist > g.zbuf[x] {
 					continue
 				}
@@ -144,7 +140,6 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 				}
 			}
 
-			// HP bar
 			hpMax := enemyMaxHP(e)
 			if hpMax < 1 {
 				hpMax = 1
@@ -158,7 +153,7 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 			barY := yTop - 4
 			visible := false
 			for x := startX; x <= endX && !visible; x++ {
-				if dist <= g.zbuf[x] {
+				if r.dist <= g.zbuf[x] {
 					visible = true
 				}
 			}
@@ -209,7 +204,7 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 			if pk.ptype == pickupAmmo {
 				colorBody = yellow
 			}
-			y := renderH/2 - size/2
+			y := centerY - size/2
 			for x := startX; x <= endX; x++ {
 				if dist > g.zbuf[x] {
 					continue
@@ -253,9 +248,8 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 			if !b.friendly {
 				c = red
 			}
-			y := renderH/2 - size/2
+			y := centerY - size/2
 			for x := startX; x <= endX; x++ {
-				// respect wall depth: don't draw behind nearer wall columns
 				if dist > g.zbuf[x] {
 					continue
 				}

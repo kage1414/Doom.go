@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"image/color"
+	"image"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -10,15 +10,18 @@ import (
 type hitInfo struct {
 	dist float64
 	side int
+	hx   float64
+	hy   float64
 }
 
 func (g *Game) drawWalls(dst *ebiten.Image) {
 	fov := deg2rad(fovDegrees)
 	halfFov := fov / 2.0
+
 	for x := 0; x < renderW; x++ {
 		alpha := (float64(x)/float64(renderW))*fov - halfFov
-		ray := normalizeAngle(g.p.angle + alpha)
-		h := g.castRay(ray)
+		rayAng := normalizeAngle(g.p.angle + alpha)
+		h := g.castRay(rayAng)
 
 		corrected := h.dist * math.Cos(alpha)
 		if corrected <= 0.0001 {
@@ -26,27 +29,44 @@ func (g *Game) drawWalls(dst *ebiten.Image) {
 		}
 		g.zbuf[x] = corrected
 
-		lineH := int(float64(renderH) / corrected)
-		if lineH > renderH {
-			lineH = renderH
-		}
+		lineH := int(float64(renderH) / corrected * WallScale)
 		start := renderH/2 - lineH/2
 
-		var base color.RGBA
-		switch h.side {
-		case 0:
-			base = colEast
-		case 1:
-			base = colWest
-		case 2:
-			base = colNorth
-		default:
-			base = colSouth
+		var txf float64
+		sinA := math.Sin(rayAng)
+		cosA := math.Cos(rayAng)
+		if h.side == 0 || h.side == 1 {
+			txf = h.hy - math.Floor(h.hy)
+			if cosA > 0 {
+				txf = 1 - txf
+			}
+		} else {
+			txf = h.hx - math.Floor(h.hx)
+			if sinA < 0 {
+				txf = 1 - txf
+			}
+		}
+		tx := int(txf * float64(g.texW))
+		if tx < 0 {
+			tx = 0
+		}
+		if tx >= g.texW {
+			tx = g.texW - 1
+		}
+
+		src := g.wallTex.SubImage(image.Rect(tx, 0, tx+1, g.texH)).(*ebiten.Image)
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(1, float64(lineH)/float64(g.texH))
+		op.GeoM.Translate(float64(x), float64(start))
+
+		sideShade := 1.0
+		if h.side == 0 || h.side == 2 {
+			sideShade = 0.85
 		}
 		fog := clamp01(corrected / maxDepth)
-		col := shade(base, 1.0-fog*0.85)
-
-		drawRect(dst, g.pix, x, start, 1, lineH, col)
+		brightness := clamp01(sideShade * (1.0 - fog*0.85))
+		op.ColorM.Scale(brightness, brightness, brightness, 1)
+		dst.DrawImage(src, op)
 	}
 }
 
@@ -96,8 +116,7 @@ func (g *Game) castRay(angle float64) hitInfo {
 			h.dist = maxDepth
 			break
 		}
-		t := g.world[mapY*g.mapW+mapX]
-		if t == tWall {
+		if g.world[mapY*g.mapW+mapX] == tWall {
 			if h.side == 0 || h.side == 1 {
 				h.dist = (float64(mapX) - g.p.pos.x + (1.0 - float64((stepX+1)/2))) / cosA
 			} else {
@@ -109,6 +128,8 @@ func (g *Game) castRay(angle float64) hitInfo {
 			if h.dist > maxDepth {
 				h.dist = maxDepth
 			}
+			h.hx = g.p.pos.x + cosA*h.dist
+			h.hy = g.p.pos.y + sinA*h.dist
 			break
 		}
 	}

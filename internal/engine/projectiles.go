@@ -49,6 +49,7 @@ func (g *Game) updateProjectiles(dt float64) {
 						e.blink = 0.12
 						if e.hp <= 0 {
 							e.dead = true
+							g.defeated++ // <- track defeated enemies
 						}
 						b.ttl = 0
 						goto bulletDone

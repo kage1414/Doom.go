@@ -15,7 +15,8 @@ func (r rect) intersects(o rect, padding int) bool {
 		r.y+r.h+padding > o.y
 }
 
-func generateMap(w, h int, rng *rand.Rand) (grid []int, spawn vec2, enemies []*enemy, pickups []*pickup) {
+// generateMap builds a room/corridor map and scatters enemies/pickups based on inputs.
+func generateMap(w, h int, rng *rand.Rand, ez, er, es, medkits, ammos int) (grid []int, spawn vec2, enemies []*enemy, pickups []*pickup) {
 	grid = make([]int, w*h)
 	for i := range grid {
 		grid[i] = tWall
@@ -67,7 +68,7 @@ func generateMap(w, h int, rng *rand.Rand) (grid []int, spawn vec2, enemies []*e
 	sx, sy := rooms[0].center()
 	spawn = vec2{float64(sx) + 0.5, float64(sy) + 0.5}
 
-	spread := func(count int, kind enemyType, hp int) {
+	spreadEnemy := func(count int, kind enemyType, hp int) {
 		for placed := 0; placed < count; {
 			x := rng.Intn(w-2) + 1
 			y := rng.Intn(h-2) + 1
@@ -85,9 +86,9 @@ func generateMap(w, h int, rng *rand.Rand) (grid []int, spawn vec2, enemies []*e
 			placed++
 		}
 	}
-	spread(EnemiesZombie, eZombie, zombieHP)
-	spread(EnemiesRunner, eRunner, runnerHP)
-	spread(EnemiesShooter, eShooter, shooterHP)
+	spreadEnemy(ez, eZombie, zombieHP)
+	spreadEnemy(er, eRunner, runnerHP)
+	spreadEnemy(es, eShooter, shooterHP)
 
 	placePickup := func(count int, pt pickupType) {
 		for placed := 0; placed < count; {
@@ -106,8 +107,8 @@ func generateMap(w, h int, rng *rand.Rand) (grid []int, spawn vec2, enemies []*e
 			placed++
 		}
 	}
-	placePickup(PickupsMedkit, pickupMedkit)
-	placePickup(PickupsAmmo, pickupAmmo)
+	placePickup(medkits, pickupMedkit)
+	placePickup(ammos, pickupAmmo)
 
 	return grid, spawn, enemies, pickups
 }
@@ -122,7 +123,7 @@ func digRoom(grid []int, w, h int, r rect) {
 	}
 }
 
-// digH2 carves a horizontal corridor that is at least 2 tiles high.
+// 2-wide corridors (already in place previously)
 func digH2(grid []int, w, h, x1, x2, y int) {
 	if x1 > x2 {
 		x1, x2 = x2, x1
@@ -134,7 +135,6 @@ func digH2(grid []int, w, h, x1, x2, y int) {
 		if y > 0 && y < h-1 {
 			grid[y*w+x] = tEmpty
 		}
-		// second row to guarantee 2-tile width; prefer y+1 if possible
 		if y+1 > 0 && y+1 < h-1 {
 			grid[(y+1)*w+x] = tEmpty
 		} else if y-1 > 0 && y-1 < h-1 {
@@ -143,7 +143,6 @@ func digH2(grid []int, w, h, x1, x2, y int) {
 	}
 }
 
-// digV2 carves a vertical corridor that is at least 2 tiles wide.
 func digV2(grid []int, w, h, y1, y2, x int) {
 	if y1 > y2 {
 		y1, y2 = y2, y1
@@ -155,7 +154,6 @@ func digV2(grid []int, w, h, y1, y2, x int) {
 		if x > 0 && x < w-1 {
 			grid[y*w+x] = tEmpty
 		}
-		// second column to guarantee 2-tile width; prefer x+1 if possible
 		if x+1 > 0 && x+1 < w-1 {
 			grid[y*w+(x+1)] = tEmpty
 		} else if x-1 > 0 && x-1 < w-1 {

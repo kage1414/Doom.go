@@ -39,6 +39,21 @@ func (g *Game) Update() error {
 		}
 		return nil
 
+	case stateLevelClear:
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+			g.level++
+			if g.level > LevelMax {
+				g.state = stateWin
+				return nil
+			}
+			g.setupLevel(g.level, false)
+			g.state = statePlaying
+			g.mouseGrabbed = true
+			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+			g.lastMouseX = 0
+		}
+		return nil
+
 	case stateGameOver, stateWin:
 		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
 			g.reset()
@@ -72,6 +87,7 @@ func (g *Game) Update() error {
 				e.aiTime += dt
 			}
 		}
+
 		g.updateProjectiles(dt)
 
 		if inpututil.IsKeyJustPressed(ebiten.KeyM) {
@@ -133,7 +149,6 @@ func (g *Game) Update() error {
 			g.moveWithCollision(vx, vy)
 		}
 
-		// HOLD-TO-FIRE (cooldown-gated)
 		if (ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) || ebiten.IsKeyPressed(ebiten.KeySpace)) &&
 			g.p.cooldown <= 0 && g.p.ammo > 0 {
 			g.p.cooldown = shootCooldownSec
@@ -195,6 +210,7 @@ func (g *Game) Update() error {
 			ebiten.SetCursorMode(ebiten.CursorModeVisible)
 			return nil
 		}
+
 		allDead := true
 		for _, e := range g.enemies {
 			if !e.dead {
@@ -203,9 +219,15 @@ func (g *Game) Update() error {
 			}
 		}
 		if allDead {
-			g.state = stateWin
-			g.mouseGrabbed = false
-			ebiten.SetCursorMode(ebiten.CursorModeVisible)
+			if g.level >= LevelMax {
+				g.state = stateWin
+				g.mouseGrabbed = false
+				ebiten.SetCursorMode(ebiten.CursorModeVisible)
+			} else {
+				g.state = stateLevelClear
+				g.mouseGrabbed = false
+				ebiten.SetCursorMode(ebiten.CursorModeVisible)
+			}
 			return nil
 		}
 	}

@@ -21,6 +21,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	switch g.state {
 	case stateMenu:
 		g.drawMenu(screen)
+	case stateLevelClear:
+		g.drawLevelClear(screen)
 	case stateGameOver:
 		g.drawStateOverlay(screen, "YOU DIED", red)
 	case stateWin:
@@ -34,7 +36,6 @@ func (g *Game) drawScene(dst *ebiten.Image) {
 	}
 	g.drawFloorCeil(dst)
 	g.drawWalls(dst)
-	// unified painter's pass: enemies, pickups, and bullets together
 	g.drawSprites(dst)
 }
 
@@ -77,4 +78,20 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	}
 	text.Draw(dst, fmt.Sprintf("HP: %d / %d", g.p.hp, playerMaxHP), g.face, bx, by+barH+14, white)
 	text.Draw(dst, fmt.Sprintf("Ammo: %d", g.p.ammo), g.face, bx, by+barH+30, yellow)
+
+	// level & counters
+	lx := ScreenW - 260
+	ly := 20
+	drawRect(dst, g.pix, lx-10, ly-16, 240, 56, color.RGBA{0, 0, 0, 160})
+	text.Draw(dst, fmt.Sprintf("Level: %d / %d", g.level, LevelMax), g.face, lx, ly, uiAccent)
+	ly += 18
+	remaining := 0
+	for _, e := range g.enemies {
+		if !e.dead {
+			remaining++
+		}
+	}
+	text.Draw(dst, fmt.Sprintf("Defeated: %d", g.defeated), g.face, lx, ly, white)
+	ly += 18
+	text.Draw(dst, fmt.Sprintf("Remaining: %d", remaining), g.face, lx, ly, white)
 }
