@@ -56,6 +56,7 @@ func NewGame() *Game {
 	g.scaleY = float64(ScreenH) / float64(renderH)
 	g.zbuf = make([]float64, renderW)
 	g.mouseGrabbed = false // start screen: mouse free
+	ebiten.SetCursorMode(ebiten.CursorModeVisible) // ensure cursor is visible in menus
 
 	g.initTextures()
 

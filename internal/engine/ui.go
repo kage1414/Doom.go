@@ -164,7 +164,7 @@ func (g *Game) drawMainMenu(dst *ebiten.Image) {
 
 	// Instructions
 	ly += 20
-	text.Draw(dst, "Use ↑/↓ to navigate, Enter to select", g.face, lx, ly, gray)
+	text.Draw(dst, "Use ↑/↓ to navigate, Enter or click to select", g.face, lx, ly, gray)
 	ly += 20
 	text.Draw(dst, "Esc to quit", g.face, lx, ly, gray)
 }
@@ -203,9 +203,9 @@ func (g *Game) drawInGameMenu(dst *ebiten.Image) {
 
 	// Instructions
 	ly += 20
-	text.Draw(dst, "Use ↑/↓ to navigate, Enter to select", g.face, lx, ly, gray)
+	text.Draw(dst, "Use ↑/↓ to navigate, Enter or click to select", g.face, lx, ly, gray)
 	ly += 20
-	text.Draw(dst, "Esc to quit game", g.face, lx, ly, gray)
+	text.Draw(dst, "Esc to resume game", g.face, lx, ly, gray)
 }
 
 func (g *Game) drawOptionsMenu(dst *ebiten.Image) {

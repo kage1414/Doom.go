@@ -338,7 +338,10 @@ func (g *Game) updatePickupMessages(dt float64) {
 }
 
 func (g *Game) updateMainMenu() {
-	// Navigate menu options
+	// Update mouse position
+	g.mouseX, g.mouseY = ebiten.CursorPosition()
+
+	// Navigate menu options with keyboard
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
 		g.menu.selectedOption--
 		if g.menu.selectedOption < 0 {
@@ -352,29 +355,27 @@ func (g *Game) updateMainMenu() {
 		}
 	}
 
-	// Select option
-	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
-		switch g.menu.selectedOption {
-		case 0: // Start Game
-			g.totalLevels = g.settings.levelCount
-			g.level = 1
-			g.setupLevel(g.level, true)
-			g.state = statePlaying
-			g.mouseGrabbed = true
-			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
-			g.lastMouseX = 0
-		case 1: // Options
-			g.previousState = stateMainMenu
-			g.state = stateOptions
-			g.menu.selectedSetting = 0
-		case 2: // Quit
-			g.shouldQuit = true
+	// Handle mouse clicks
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		clickedOption := g.getMainMenuOptionAt(g.mouseX, g.mouseY)
+		if clickedOption >= 0 {
+			g.menu.selectedOption = clickedOption
+			// Trigger the selection immediately
+			g.selectMainMenuOption()
 		}
+	}
+
+	// Select option with Enter key
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		g.selectMainMenuOption()
 	}
 }
 
 func (g *Game) updateInGameMenu() {
-	// Navigate menu options
+	// Update mouse position
+	g.mouseX, g.mouseY = ebiten.CursorPosition()
+
+	// Navigate menu options with keyboard
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
 		g.menu.selectedInGameOption--
 		if g.menu.selectedInGameOption < 0 {
@@ -388,21 +389,19 @@ func (g *Game) updateInGameMenu() {
 		}
 	}
 
-	// Select option
-	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
-		switch g.menu.selectedInGameOption {
-		case 0: // Resume Game
-			g.state = statePlaying
-			g.mouseGrabbed = true
-			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
-			g.lastMouseX = 0
-		case 1: // Options
-			g.previousState = stateInGameMenu
-			g.state = stateOptions
-			g.menu.selectedSetting = 0 // Reset to fire rate (valid for both contexts)
-		case 2: // Quit Game
-			g.resetToMainMenu()
+	// Handle mouse clicks
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		clickedOption := g.getInGameMenuOptionAt(g.mouseX, g.mouseY)
+		if clickedOption >= 0 {
+			g.menu.selectedInGameOption = clickedOption
+			// Trigger the selection immediately
+			g.selectInGameMenuOption()
 		}
+	}
+
+	// Select option with Enter key
+	if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		g.selectInGameMenuOption()
 	}
 }
 
@@ -517,4 +516,93 @@ func (g *Game) handleSliderClick() {
 		g.settings.fireRate = newFireRate
 		g.saveSettings()
 	}
+}
+
+// selectMainMenuOption handles the main menu option selection
+func (g *Game) selectMainMenuOption() {
+	switch g.menu.selectedOption {
+	case 0: // Start Game
+		g.totalLevels = g.settings.levelCount
+		g.level = 1
+		g.setupLevel(g.level, true)
+		g.state = statePlaying
+		g.mouseGrabbed = true
+		ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+		g.lastMouseX = 0
+	case 1: // Options
+		g.previousState = stateMainMenu
+		g.state = stateOptions
+		g.menu.selectedSetting = 0
+	case 2: // Quit
+		g.shouldQuit = true
+	}
+}
+
+// getMainMenuOptionAt returns the menu option index at the given mouse coordinates, or -1 if none
+func (g *Game) getMainMenuOptionAt(mouseX, mouseY int) int {
+	// Menu dimensions and position (same as in drawMainMenu)
+	w, h := 400, 300
+	x := (ScreenW - w) / 2
+	y := (ScreenH - h) / 2
+
+	// Check if click is within menu bounds
+	if mouseX < x || mouseX > x+w || mouseY < y || mouseY > y+h {
+		return -1
+	}
+
+	// Calculate option positions
+	ly := y + 40 + 50 // Start after title
+
+	// Check each option (3 options, 30 pixels apart)
+	for i := 0; i < 3; i++ {
+		optionY := ly + i*30
+		if mouseY >= optionY-15 && mouseY <= optionY+15 {
+			return i
+		}
+	}
+
+	return -1
+}
+
+// selectInGameMenuOption handles the in-game menu option selection
+func (g *Game) selectInGameMenuOption() {
+	switch g.menu.selectedInGameOption {
+	case 0: // Resume Game
+		g.state = statePlaying
+		g.mouseGrabbed = true
+		ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+		g.lastMouseX = 0
+	case 1: // Options
+		g.previousState = stateInGameMenu
+		g.state = stateOptions
+		g.menu.selectedSetting = 0 // Reset to fire rate (valid for both contexts)
+	case 2: // Quit Game
+		g.resetToMainMenu()
+	}
+}
+
+// getInGameMenuOptionAt returns the in-game menu option index at the given mouse coordinates, or -1 if none
+func (g *Game) getInGameMenuOptionAt(mouseX, mouseY int) int {
+	// Menu dimensions and position (same as in drawInGameMenu)
+	w, h := 400, 250
+	x := (ScreenW - w) / 2
+	y := (ScreenH - h) / 2
+
+	// Check if click is within menu bounds
+	if mouseX < x || mouseX > x+w || mouseY < y || mouseY > y+h {
+		return -1
+	}
+
+	// Calculate option positions
+	ly := y + 40 + 50 // Start after title
+
+	// Check each option (3 options, 30 pixels apart)
+	for i := 0; i < 3; i++ {
+		optionY := ly + i*30
+		if mouseY >= optionY-15 && mouseY <= optionY+15 {
+			return i
+		}
+	}
+
+	return -1
 }
