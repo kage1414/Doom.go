@@ -143,8 +143,14 @@ type Game struct {
 	db *Database
 
 	// Audio
-	audioContext *audio.Context
+	audioContext    *audio.Context
 	bulletSoundData []byte
+	coinSoundData   []byte
+	reloadSoundData []byte
+	oneUpSoundData  []byte
+	zombieGrumbler  *audio.Player
+	runnerGrumbler  *audio.Player
+	shooterGrumbler *audio.Player
 }
 
 var _ ebiten.Game = (*Game)(nil)

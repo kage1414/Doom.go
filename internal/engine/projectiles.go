@@ -52,7 +52,8 @@ func (g *Game) updateProjectiles(dt float64) {
 						e.blink = 0.12
 						if e.hp <= 0 {
 							e.dead = true
-							g.defeated++ // <- track defeated enemies
+							g.defeated++      // <- track defeated enemies
+							g.playCoinSound() // Play coin sound when enemy dies
 						}
 						b.ttl = 0
 						goto bulletDone

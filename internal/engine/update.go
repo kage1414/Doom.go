@@ -162,6 +162,7 @@ func (g *Game) Update() error {
 		}
 
 		g.updateProjectiles(dt)
+		g.updateGrumblingSounds()
 
 		if inpututil.IsKeyJustPressed(ebiten.KeyM) {
 			g.minimap = !g.minimap
@@ -269,6 +270,7 @@ func (g *Game) Update() error {
 							g.p.hp = playerMaxHP
 						}
 						pk.took = true
+						g.playOneUpSound() // Play 1-up sound for health pickup
 						// Add pickup message
 						g.pickupMessages = append(g.pickupMessages, pickupMessage{
 							text:     fmt.Sprintf("+%d Health", medkitHeal),
@@ -279,6 +281,7 @@ func (g *Game) Update() error {
 				case pickupAmmo:
 					g.p.ammo += ammoPickupAmt
 					pk.took = true
+					g.playReloadSound() // Play reload sound for ammo pickup
 					// Add pickup message
 					g.pickupMessages = append(g.pickupMessages, pickupMessage{
 						text:     fmt.Sprintf("+%d Ammo", ammoPickupAmt),
