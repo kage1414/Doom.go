@@ -31,7 +31,11 @@ func (g *Game) Update() error {
 			g.mouseGrabbed = false
 			ebiten.SetCursorMode(ebiten.CursorModeVisible)
 		case stateInGameMenu:
-			g.resetToMainMenu()
+			// Resume the game
+			g.state = statePlaying
+			g.mouseGrabbed = true
+			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
+			g.lastMouseX = 0
 		case stateMenu:
 			return ebiten.Termination
 		case stateOptions:
