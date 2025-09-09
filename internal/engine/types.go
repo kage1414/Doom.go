@@ -4,6 +4,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/audio"
 	"golang.org/x/image/font"
 )
 
@@ -140,6 +141,10 @@ type Game struct {
 
 	// Database for persistent settings
 	db *Database
+
+	// Audio
+	audioContext *audio.Context
+	bulletSoundData []byte
 }
 
 var _ ebiten.Game = (*Game)(nil)

@@ -12,6 +12,9 @@ func (g *Game) firePlayerShot() {
 		radius:   0.05,
 		damage:   playerShotDmg,
 	})
+
+	// Play bullet sound
+	g.playBulletSound()
 }
 
 func (g *Game) updateProjectiles(dt float64) {

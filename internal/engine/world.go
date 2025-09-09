@@ -58,6 +58,13 @@ func NewGame() *Game {
 	g.mouseGrabbed = false // start screen: mouse free
 
 	g.initTextures()
+
+	// Initialize audio
+	if err := g.initAudio(); err != nil {
+		log.Printf("Failed to initialize audio: %v", err)
+		// Continue without audio if initialization fails
+	}
+
 	return g
 }
 
