@@ -12,7 +12,27 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawScene(g.fb)
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(g.scaleX, g.scaleY)
+
+	// Center the scaled image on the screen
+	screenW, screenH := screen.Bounds().Dx(), screen.Bounds().Dy()
+	scaledW := int(float64(renderW) * g.scaleX)
+	scaledH := int(float64(renderH) * g.scaleY)
+	offsetX := (screenW - scaledW) / 2
+	offsetY := (screenH - scaledH) / 2
+	op.GeoM.Translate(float64(offsetX), float64(offsetY))
+
 	screen.DrawImage(g.fb, op)
+
+	// Draw reticle on screen coordinates
+	if g.state == statePlaying {
+		c := uiAccent
+		h := int(2.5 * g.scaleX) // Quarter size: 10/4 = 2.5
+		w := int(0.5 * g.scaleX) // Quarter size: 2/4 = 0.5
+		cx := screenW / 2
+		cy := screenH / 2
+		drawRect(screen, g.pix, cx-w/2, cy-h, w, h*2, c)
+		drawRect(screen, g.pix, cx-h, cy-w/2, h*2, w, c)
+	}
 
 	g.drawHUD(screen)
 	if g.minimap && g.state == statePlaying {
@@ -49,13 +69,6 @@ func (g *Game) drawScene(dst *ebiten.Image) {
 
 func (g *Game) drawHUD(dst *ebiten.Image) {
 	if g.state == statePlaying {
-		c := uiAccent
-		h := 10
-		w := 2
-		cx := int(float64(renderW) / 2.0 * g.scaleX)
-		cy := int(float64(renderH) / 2.0 * g.scaleY)
-		drawRect(dst, g.pix, cx-w/2, cy-h, w, h*2, c)
-		drawRect(dst, g.pix, cx-h, cy-w/2, h*2, w, c)
 		if g.p.muzzleTime > 0 {
 			a := uint8(80 * g.p.muzzleTime / 0.06)
 			drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{255, 255, 200, a})

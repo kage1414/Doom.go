@@ -11,8 +11,17 @@ import (
 
 func (g *Game) Layout(outW, outH int) (int, int) {
 	if outW > 0 && outH > 0 {
-		g.scaleX = float64(outW) / float64(renderW)
-		g.scaleY = float64(outH) / float64(renderH)
+		// Use uniform scaling to maintain aspect ratio
+		scaleX := float64(outW) / float64(renderW)
+		scaleY := float64(outH) / float64(renderH)
+		// Use the smaller scale to fit the entire image
+		if scaleX < scaleY {
+			g.scaleX = scaleX
+			g.scaleY = scaleX
+		} else {
+			g.scaleX = scaleY
+			g.scaleY = scaleY
+		}
 	}
 	return ScreenW, ScreenH
 }

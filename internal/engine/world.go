@@ -55,7 +55,7 @@ func NewGame() *Game {
 	g.scaleX = float64(ScreenW) / float64(renderW)
 	g.scaleY = float64(ScreenH) / float64(renderH)
 	g.zbuf = make([]float64, renderW)
-	g.mouseGrabbed = false // start screen: mouse free
+	g.mouseGrabbed = false                         // start screen: mouse free
 	ebiten.SetCursorMode(ebiten.CursorModeVisible) // ensure cursor is visible in menus
 
 	g.initTextures()
@@ -167,11 +167,11 @@ func (g *Game) setupLevel(level int, fresh bool) {
 	g.levelEnemyTotal = len(enemies)
 
 	if fresh {
-		g.p = player{pos: spawn, angle: 0, hp: playerStartHP, ammo: playerStartAmmo}
+		g.p = player{pos: spawn, angle: -math.Pi / 2, hp: playerStartHP, ammo: playerStartAmmo}
 		g.defeated = 0
 	} else {
 		g.p.pos = spawn
-		g.p.angle = 0
+		g.p.angle = -math.Pi / 2
 	}
 
 	sx, sy := int(math.Floor(spawn.x)), int(math.Floor(spawn.y))
