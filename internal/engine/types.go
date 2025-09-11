@@ -51,12 +51,13 @@ type pickup struct {
 }
 
 type projectile struct {
-	pos      vec2
-	vel      vec2
-	ttl      float64
-	friendly bool
-	radius   float64
-	damage   int
+	pos        vec2
+	vel        vec2
+	ttl        float64
+	friendly   bool
+	radius     float64
+	damage     int
+	whizPlayed bool // Track if whiz sound has been played for this bullet
 }
 
 type gameState int
@@ -148,6 +149,7 @@ type Game struct {
 	coinSoundData   []byte
 	reloadSoundData []byte
 	oneUpSoundData  []byte
+	bulletWhizData  []byte
 	zombieGrumbler  *audio.Player
 	runnerGrumbler  *audio.Player
 	shooterGrumbler *audio.Player

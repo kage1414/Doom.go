@@ -60,6 +60,15 @@ func (g *Game) updateProjectiles(dt float64) {
 					}
 				}
 			} else {
+				// Check for bullet whiz sound (enemy bullets passing close to player)
+				if !b.whizPlayed {
+					distToPlayer := math.Hypot(b.pos.x-g.p.pos.x, b.pos.y-g.p.pos.y)
+					if distToPlayer < 1.5 && distToPlayer > 0.5 { // Close but not hitting
+						g.playBulletWhizSound()
+						b.whizPlayed = true
+					}
+				}
+
 				if dist2(b.pos.x, b.pos.y, g.p.pos.x, g.p.pos.y) < 0.35*0.35 {
 					g.p.hp -= b.damage
 					if g.p.hp < 0 {

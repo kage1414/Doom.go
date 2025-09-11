@@ -114,6 +114,46 @@ func generateReloadSound(sampleRate int) []byte {
 	return data
 }
 
+// generateBulletWhizSound creates a whooshing sound for bullets passing by
+func generateBulletWhizSound(sampleRate int) []byte {
+	const duration = 0.15 // 150ms - short and sharp
+	samples := int(float64(sampleRate) * duration)
+	data := make([]byte, samples*2) // 16-bit audio
+
+	for i := 0; i < samples; i++ {
+		t := float64(i) / float64(sampleRate)
+
+		// Create a whooshing sound with noise and frequency sweep
+		// Start high frequency and sweep down (like a bullet whizzing by)
+		baseFreq := 800.0 - 400.0*t // 800Hz to 400Hz sweep
+
+		// Add white noise for the "whoosh" effect
+		noise := (math.Sin(t*baseFreq*2*math.Pi) + math.Sin(t*baseFreq*1.5*2*math.Pi)) / 2
+
+		// Add higher frequency components for the "whiz"
+		whizFreq := 1200.0 - 600.0*t // 1200Hz to 600Hz
+		whiz := 0.3 * math.Sin(t*whizFreq*2*math.Pi)
+
+		// Combine noise and whiz
+		sound := 0.7*noise + 0.3*whiz
+
+		// Envelope: quick attack, sustained, quick decay
+		envelope := 1.0
+		if t < 0.02 {
+			envelope = t / 0.02 // Quick attack
+		} else if t > 0.1 {
+			envelope = (0.15 - t) / 0.05 // Quick decay
+		}
+
+		// Convert to 16-bit PCM
+		sample := int16(sound * envelope * 8000)
+		data[i*2] = byte(sample)
+		data[i*2+1] = byte(sample >> 8)
+	}
+
+	return data
+}
+
 // generateOneUpSound creates a classic 1-up sound for health pickups
 func generateOneUpSound(sampleRate int) []byte {
 	const duration = 0.8 // 800ms
@@ -273,6 +313,7 @@ func (g *Game) initAudio() error {
 	g.coinSoundData = generateCoinSound(44100)
 	g.reloadSoundData = generateReloadSound(44100)
 	g.oneUpSoundData = generateOneUpSound(44100)
+	g.bulletWhizData = generateBulletWhizSound(44100)
 
 	// Create grumbling sound players
 	zombieData := generateZombieGrumbler(44100)
@@ -332,6 +373,16 @@ func (g *Game) playOneUpSound() {
 		// Create a new player for each 1-up sound
 		player := audio.NewPlayerFromBytes(g.audioContext, g.oneUpSoundData)
 		player.SetVolume(0.1)
+		player.Play()
+	}
+}
+
+// playBulletWhizSound plays the bullet whiz sound for bullets passing by
+func (g *Game) playBulletWhizSound() {
+	if g.audioContext != nil && g.bulletWhizData != nil {
+		// Create a new player for each whiz sound
+		player := audio.NewPlayerFromBytes(g.audioContext, g.bulletWhizData)
+		player.SetVolume(0.15)
 		player.Play()
 	}
 }
