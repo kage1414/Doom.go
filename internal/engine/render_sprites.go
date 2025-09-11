@@ -326,13 +326,23 @@ func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, di
 	}
 }
 
-// drawMedkitSprite draws a first aid kit pickup sprite
+// drawMedkitSprite draws a realistic first aid kit pickup sprite with animation
 func (g *Game) drawMedkitSprite(dst *ebiten.Image, startX, endX, y, size int, dist float64) {
 	// First aid kit colors
 	kitBody := color.RGBA{255, 255, 255, 255}   // White
 	kitCross := color.RGBA{200, 50, 50, 255}    // Red cross
-	kitBorder := color.RGBA{200, 200, 200, 255} // Light gray border
+	kitBorder := color.RGBA{180, 180, 180, 255} // Gray border
+	kitShadow := color.RGBA{220, 220, 220, 255} // Light shadow
 
+	// Animation: bobbing up and down (same as bullets)
+	bobOffset := int(math.Sin(g.gameTime*3.0) * 3.0) // 3 pixel bob, 3 cycles per second
+	animatedY := y + bobOffset
+
+	// Calculate medkit dimensions based on 3x3x1 ratio
+	// The sprite should be roughly square (3x3) with some depth (1)
+	medkitHeight := size
+
+	// Draw the medkit as a 3D box with proper proportions
 	for x := startX; x <= endX; x++ {
 		// Ensure x is within zbuf bounds
 		if x < 0 || x >= len(g.zbuf) {
@@ -345,25 +355,30 @@ func (g *Game) drawMedkitSprite(dst *ebiten.Image, startX, endX, y, size int, di
 		// Calculate relative position within sprite (0.0 to 1.0)
 		relPos := float64(x-startX) / float64(endX-startX)
 
-		// First aid kit shape: rectangular with rounded edges
+		// Create 3D box effect with depth
 		var spriteHeight int
-		if relPos < 0.1 || relPos > 0.9 {
-			// Rounded edges
-			spriteHeight = size * 3 / 4
+		var colorBody color.Color
+
+		// Front face of the box (main body)
+		if relPos < 0.7 {
+			// Main body - full height
+			spriteHeight = medkitHeight
+			colorBody = kitBody
 		} else {
-			// Full height
-			spriteHeight = size
+			// Side face - slightly shorter for 3D effect
+			spriteHeight = int(float64(medkitHeight) * 0.8)
+			colorBody = kitShadow
 		}
 
-		// Draw the kit body
-		kitY := y + (size-spriteHeight)/2
-		drawRect(dst, g.pix, x, kitY, 1, spriteHeight, kitBody)
+		// Draw the medkit body
+		kitY := animatedY + (medkitHeight-spriteHeight)/2
+		drawRect(dst, g.pix, x, kitY, 1, spriteHeight, colorBody)
 
-		// Add white cross in the center
-		if relPos >= 0.3 && relPos <= 0.7 {
+		// Add red cross in the center (only on front face)
+		if relPos >= 0.2 && relPos <= 0.5 {
 			// Vertical cross line
-			crossY := y + size/4
-			crossH := size / 2
+			crossY := animatedY + medkitHeight/4
+			crossH := medkitHeight / 2
 			drawRect(dst, g.pix, x, crossY, 1, crossH, kitCross)
 
 			// Horizontal cross line
@@ -373,13 +388,13 @@ func (g *Game) drawMedkitSprite(dst *ebiten.Image, startX, endX, y, size int, di
 				crossW = 3
 				crossX = x - 1
 			}
-			centerY := y + size/2
+			centerY := animatedY + medkitHeight/2
 			drawRect(dst, g.pix, crossX, centerY-1, crossW, 3, kitCross)
 		}
 
-		// Add border
+		// Add border for definition
 		if x == startX || x == endX {
-			drawRect(dst, g.pix, x, y, 1, size, kitBorder)
+			drawRect(dst, g.pix, x, animatedY, 1, medkitHeight, kitBorder)
 		}
 	}
 }
