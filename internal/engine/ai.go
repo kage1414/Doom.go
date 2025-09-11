@@ -1,6 +1,9 @@
 package engine
 
-import "math"
+import (
+	"math"
+	"math/rand"
+)
 
 const (
 	stepSize    = 0.08
@@ -76,12 +79,14 @@ func (g *Game) shooterAI(e *enemy, dt float64) {
 		e.aiTime = 0
 		v := vec2{dirx * enemyShotSpd, diry * enemyShotSpd}
 		g.bullets = append(g.bullets, &projectile{
-			pos:      vec2{e.pos.x + dirx*0.3, e.pos.y + diry*0.3},
-			vel:      v,
-			ttl:      enemyShotTTL,
-			friendly: false,
-			radius:   0.05,
-			damage:   enemyShotDmg,
+			pos:        vec2{e.pos.x + dirx*0.3, e.pos.y + diry*0.3},
+			vel:        v,
+			ttl:        enemyShotTTL,
+			friendly:   false,
+			radius:     0.05,
+			damage:     enemyShotDmg,
+			curveAngle: (rand.Float64() - 0.5) * 0.2, // Random curve between -0.1 and 0.1 radians
+			curveRate:  0.3 + rand.Float64()*0.4,     // Curve rate between 0.3 and 0.7
 		})
 	}
 }

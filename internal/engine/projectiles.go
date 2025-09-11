@@ -1,16 +1,21 @@
 package engine
 
-import "math"
+import (
+	"math"
+	"math/rand"
+)
 
 func (g *Game) firePlayerShot() {
 	dirx, diry := math.Cos(g.p.angle), math.Sin(g.p.angle)
 	g.bullets = append(g.bullets, &projectile{
-		pos:      vec2{g.p.pos.x + dirx*0.4, g.p.pos.y + diry*0.4},
-		vel:      vec2{dirx * g.settings.bulletSpeed, diry * g.settings.bulletSpeed},
-		ttl:      playerShotTTL,
-		friendly: true,
-		radius:   0.05,
-		damage:   playerShotDmg,
+		pos:        vec2{g.p.pos.x + dirx*0.4, g.p.pos.y + diry*0.4},
+		vel:        vec2{dirx * g.settings.bulletSpeed, diry * g.settings.bulletSpeed},
+		ttl:        playerShotTTL,
+		friendly:   true,
+		radius:     0.05,
+		damage:     playerShotDmg,
+		curveAngle: (rand.Float64() - 0.5) * 0.3, // Random curve between -0.15 and 0.15 radians
+		curveRate:  0.5 + rand.Float64()*0.5,     // Curve rate between 0.5 and 1.0
 	})
 
 	// Play bullet sound
@@ -23,6 +28,26 @@ func (g *Game) updateProjectiles(dt float64) {
 		b.ttl -= dt
 		if b.ttl <= 0 {
 			continue
+		}
+
+		// Apply curving effect - gradually change velocity direction
+		// The curve becomes more pronounced as the bullet travels further
+		curveStrength := (playerShotTTL - b.ttl) * b.curveRate * 0.05 // Increases over time
+
+		// Apply curve perpendicular to current velocity direction
+		velLen := math.Hypot(b.vel.x, b.vel.y)
+		if velLen > 0 {
+			// Get perpendicular direction (rotate 90 degrees)
+			perpX := -b.vel.y / velLen
+			perpY := b.vel.x / velLen
+
+			// Apply curve in the perpendicular direction
+			curveX := perpX * curveStrength * math.Cos(b.curveAngle)
+			curveY := perpY * curveStrength * math.Sin(b.curveAngle)
+
+			// Add curve to velocity
+			b.vel.x += curveX * dt
+			b.vel.y += curveY * dt
 		}
 
 		steps := int(math.Ceil(math.Max(math.Abs(b.vel.x*dt), math.Abs(b.vel.y*dt)) / 0.05))

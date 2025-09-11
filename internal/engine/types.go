@@ -57,7 +57,9 @@ type projectile struct {
 	friendly   bool
 	radius     float64
 	damage     int
-	whizPlayed bool // Track if whiz sound has been played for this bullet
+	whizPlayed bool    // Track if whiz sound has been played for this bullet
+	curveAngle float64 // Random angle for bullet curving
+	curveRate  float64 // How fast the bullet curves
 }
 
 type gameState int
