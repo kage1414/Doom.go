@@ -93,7 +93,7 @@ func (g *Game) Update() error {
 			}
 		}
 		// Enter to begin
-		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
 			g.level = 1
 			g.setupLevel(g.level, true)
 			g.state = statePlaying
@@ -104,7 +104,7 @@ func (g *Game) Update() error {
 		return nil
 
 	case stateMenu:
-		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
 			g.state = statePlaying
 			g.mouseGrabbed = true
 			ebiten.SetCursorMode(ebiten.CursorModeCaptured)
@@ -116,7 +116,7 @@ func (g *Game) Update() error {
 		return nil
 
 	case stateLevelClear:
-		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
 			g.level++
 			if g.level > g.totalLevels {
 				g.state = stateWin
@@ -131,13 +131,13 @@ func (g *Game) Update() error {
 		return nil
 
 	case stateGameOver:
-		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
 			g.reset()
 		}
 		return nil
 
 	case stateWin:
-		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
+		if inpututil.IsKeyJustPressed(ebiten.KeyEnter) || inpututil.IsKeyJustPressed(ebiten.KeyNumpadEnter) {
 			g.resetToMainMenu()
 		}
 		return nil

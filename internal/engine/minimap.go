@@ -12,8 +12,20 @@ func (g *Game) drawMinimap(dst *ebiten.Image) {
 		return
 	}
 
-	const scale = 7
-	const px, py = 10, 80
+	// Calculate minimap size as 15% of screen to avoid HUD overlap
+	screenW := dst.Bounds().Dx()
+	minimapSize := int(float64(screenW) * 0.15) // 15% of screen width
+
+	// Calculate scale to fit the map in the minimap size
+	scale := minimapSize / g.mapW
+	if scale < 1 {
+		scale = 1
+	}
+
+	// Position in top-left corner with margin, avoiding HUD area
+	margin := 20
+	px := margin
+	py := margin + 60 // Move down to avoid health/ammo display
 
 	// frame
 	drawRect(dst, g.pix, px-1, py-1, g.mapW*scale+2, g.mapH*scale+2, uiBox)

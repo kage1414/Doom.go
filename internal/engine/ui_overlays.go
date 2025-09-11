@@ -73,7 +73,11 @@ func (g *Game) drawStateOverlay(dst *ebiten.Image, title string, titleCol color.
 	ly := y + 48
 	text.Draw(dst, title, g.face, lx, ly, titleCol)
 	ly += 36
-	text.Draw(dst, "Press Enter to restart", g.face, lx, ly, white)
+	if title == "YOU WIN!" {
+		text.Draw(dst, "Press Enter to return to main menu", g.face, lx, ly, white)
+	} else {
+		text.Draw(dst, "Press Enter to restart", g.face, lx, ly, white)
+	}
 }
 
 func (g *Game) drawLevelClear(dst *ebiten.Image) {
