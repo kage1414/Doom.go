@@ -6,8 +6,8 @@ const (
 	ScreenW = 1920
 	ScreenH = 1080
 
-	renderW = 320
-	renderH = 200
+	renderW = 640
+	renderH = 400
 
 	WallScale = 0.65
 

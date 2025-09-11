@@ -47,6 +47,19 @@ func drawRect(dst, pix *ebiten.Image, x, y, w, h int, clr color.Color) {
 	dst.DrawImage(pix, op)
 }
 
+// drawRectHR draws a high-resolution rectangle with 2x height scaling for better sprite quality
+func drawRectHR(dst, pix *ebiten.Image, x, y, w, h int, clr color.Color) {
+	if w <= 0 || h <= 0 {
+		return
+	}
+	// Scale up height by 2x for higher resolution, but keep width the same for proper sprite proportions
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(float64(w), float64(h*2))
+	op.GeoM.Translate(float64(x), float64(y))
+	op.ColorM.ScaleWithColor(clr)
+	dst.DrawImage(pix, op)
+}
+
 func dist2(x1, y1, x2, y2 float64) float64 {
 	dx := x2 - x1
 	dy := y2 - y1

@@ -129,14 +129,14 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 				}
 				y := yTop
 				if headH > 0 {
-					drawRect(dst, g.pix, x, y, 1, headH, headCol)
+					drawRectHR(dst, g.pix, x, y, 1, headH, headCol)
 					y += headH
 				}
 				if bodyH > 0 {
-					drawRect(dst, g.pix, x, y, 1, bodyH, bodyCol)
+					drawRectHR(dst, g.pix, x, y, 1, bodyH, bodyCol)
 				}
 				if x == startX || x == endX {
-					drawRect(dst, g.pix, x, yTop, 1, size, color.RGBA{0, 0, 0, 120})
+					drawRectHR(dst, g.pix, x, yTop, 1, size, color.RGBA{0, 0, 0, 120})
 				}
 			}
 
@@ -158,7 +158,7 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 				}
 			}
 			if visible {
-				drawRect(dst, g.pix, barX, barY, barW, barH, black)
+				drawRectHR(dst, g.pix, barX, barY, barW, barH, black)
 				fillW := int(float64(barW) * clamp01(float64(e.hp)/float64(hpMax)))
 				if fillW > 0 {
 					col := red
@@ -167,7 +167,7 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 					} else if e.hp > 1 {
 						col = yellow
 					}
-					drawRect(dst, g.pix, barX, barY, fillW, barH, col)
+					drawRectHR(dst, g.pix, barX, barY, fillW, barH, col)
 				}
 			}
 
@@ -249,7 +249,7 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 				if dist > g.zbuf[x] {
 					continue
 				}
-				drawRect(dst, g.pix, x, y, 1, size, c)
+				drawRectHR(dst, g.pix, x, y, 1, size, c)
 			}
 		}
 	}
@@ -299,7 +299,7 @@ func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, di
 			coneWidth := coneProgress                        // 0.0 at tip, 1.0 at base
 			if float64(x-bulletStartX)/float64(bulletEndX-bulletStartX) <= coneWidth {
 				bulletY := animatedY + y + int(spinOffset)
-				drawRect(dst, g.pix, x, bulletY, 1, 1, bulletTip)
+				drawRectHR(dst, g.pix, x, bulletY, 1, 1, bulletTip)
 			}
 		}
 
@@ -308,7 +308,7 @@ func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, di
 		bodyStartY := coneHeight
 		for y := 0; y < bodyHeight; y++ {
 			bulletY := animatedY + bodyStartY + y + int(spinOffset)
-			drawRect(dst, g.pix, x, bulletY, 1, 1, bulletBody)
+			drawRectHR(dst, g.pix, x, bulletY, 1, 1, bulletBody)
 		}
 
 		// Bottom 10% - dark grey base (cylinder)
@@ -316,12 +316,12 @@ func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, di
 		baseStartY := coneHeight + bodyHeight
 		for y := 0; y < baseHeight; y++ {
 			bulletY := animatedY + baseStartY + y + int(spinOffset)
-			drawRect(dst, g.pix, x, bulletY, 1, 1, bulletBase)
+			drawRectHR(dst, g.pix, x, bulletY, 1, 1, bulletBase)
 		}
 
 		// Add metallic rim effect
 		if x == bulletStartX || x == bulletEndX {
-			drawRect(dst, g.pix, x, animatedY, 1, size, bulletRim)
+			drawRectHR(dst, g.pix, x, animatedY, 1, size, bulletRim)
 		}
 	}
 }
@@ -372,14 +372,14 @@ func (g *Game) drawMedkitSprite(dst *ebiten.Image, startX, endX, y, size int, di
 
 		// Draw the medkit body
 		kitY := animatedY + (medkitHeight-spriteHeight)/2
-		drawRect(dst, g.pix, x, kitY, 1, spriteHeight, colorBody)
+		drawRectHR(dst, g.pix, x, kitY, 1, spriteHeight, colorBody)
 
 		// Add red cross in the center (only on front face)
 		if relPos >= 0.2 && relPos <= 0.5 {
 			// Vertical cross line
 			crossY := animatedY + medkitHeight/4
 			crossH := medkitHeight / 2
-			drawRect(dst, g.pix, x, crossY, 1, crossH, kitCross)
+			drawRectHR(dst, g.pix, x, crossY, 1, crossH, kitCross)
 
 			// Horizontal cross line
 			crossX := x
@@ -389,12 +389,12 @@ func (g *Game) drawMedkitSprite(dst *ebiten.Image, startX, endX, y, size int, di
 				crossX = x - 1
 			}
 			centerY := animatedY + medkitHeight/2
-			drawRect(dst, g.pix, crossX, centerY-1, crossW, 3, kitCross)
+			drawRectHR(dst, g.pix, crossX, centerY-1, crossW, 3, kitCross)
 		}
 
 		// Add border for definition
 		if x == startX || x == endX {
-			drawRect(dst, g.pix, x, animatedY, 1, medkitHeight, kitBorder)
+			drawRectHR(dst, g.pix, x, animatedY, 1, medkitHeight, kitBorder)
 		}
 	}
 }

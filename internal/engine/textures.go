@@ -14,7 +14,7 @@ func (g *Game) initTextures() {
 	if g.wallTex != nil {
 		return
 	}
-	const tw, th = 128, 128
+	const tw, th = 256, 256
 	img := image.NewRGBA(image.Rect(0, 0, tw, th))
 	makeRuggedRock(img)
 	g.wallTex = ebiten.NewImageFromImage(img)
