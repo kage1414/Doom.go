@@ -144,6 +144,7 @@ func (g *Game) Update() error {
 
 	case statePlaying:
 		dt := 1.0 / 60.0
+		g.gameTime += dt
 
 		if g.p.cooldown > 0 {
 			g.p.cooldown -= dt

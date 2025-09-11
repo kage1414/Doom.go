@@ -151,6 +151,9 @@ type Game struct {
 	zombieGrumbler  *audio.Player
 	runnerGrumbler  *audio.Player
 	shooterGrumbler *audio.Player
+
+	// Animation
+	gameTime float64
 }
 
 var _ ebiten.Game = (*Game)(nil)

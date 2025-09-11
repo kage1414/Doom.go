@@ -255,12 +255,17 @@ func (g *Game) drawSprites(dst *ebiten.Image) {
 	}
 }
 
-// drawBulletSprite draws a skinny vertical bullet pickup sprite
+// drawBulletSprite draws a realistic bullet pickup sprite with animation
 func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, dist float64) {
-	// Bullet colors
-	bulletBody := color.RGBA{180, 180, 180, 255} // Silver/gray
-	bulletTip := color.RGBA{220, 220, 220, 255}  // Lighter silver
-	bulletBase := color.RGBA{140, 140, 140, 255} // Darker silver
+	// Bullet colors - realistic bullet appearance
+	bulletTip := color.RGBA{255, 255, 255, 255}  // White cone tip
+	bulletBody := color.RGBA{200, 200, 200, 255} // Light grey cylinder
+	bulletBase := color.RGBA{100, 100, 100, 255} // Dark grey base
+	bulletRim := color.RGBA{80, 80, 80, 255}     // Dark rim
+
+	// Animation: bobbing up and down
+	bobOffset := int(math.Sin(g.gameTime*3.0) * 3.0) // 3 pixel bob, 3 cycles per second
+	animatedY := y + bobOffset
 
 	// Make the bullet skinny - reduce width to 1/3 of original
 	bulletWidth := (endX - startX) / 3
@@ -270,6 +275,10 @@ func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, di
 	bulletStartX := startX + (endX-startX-bulletWidth)/2
 	bulletEndX := bulletStartX + bulletWidth
 
+	// Spinning animation: rotate the bullet around its center
+	spinAngle := g.gameTime * 2.0 // 2 radians per second
+
+	// Draw the bullet vertically - each horizontal slice represents a vertical section
 	for x := bulletStartX; x <= bulletEndX; x++ {
 		// Ensure x is within zbuf bounds
 		if x < 0 || x >= len(g.zbuf) {
@@ -279,39 +288,40 @@ func (g *Game) drawBulletSprite(dst *ebiten.Image, startX, endX, y, size int, di
 			continue
 		}
 
-		// Calculate relative position within sprite (0.0 to 1.0)
-		relPos := float64(x-bulletStartX) / float64(bulletEndX-bulletStartX)
+		// Calculate spinning offset for subtle animation
+		spinOffset := math.Sin(spinAngle+float64(x-bulletStartX)*math.Pi*2/float64(bulletEndX-bulletStartX)) * 0.2
 
-		// Vertical bullet shape: narrow tip, wider body, narrow base
-		var spriteHeight int
-		if relPos < 0.2 {
-			// Tip - narrow
-			spriteHeight = size / 3
-		} else if relPos < 0.7 {
-			// Body - full width
-			spriteHeight = size
-		} else {
-			// Base - narrow
-			spriteHeight = size / 2
+		// Draw the bullet vertically from top to bottom
+		// Top 40% - white cone tip (pointing upward)
+		coneHeight := int(float64(size) * 0.4)
+		for y := 0; y < coneHeight; y++ {
+			coneProgress := float64(y) / float64(coneHeight) // 0 at tip, 1 at base
+			coneWidth := coneProgress                        // 0.0 at tip, 1.0 at base
+			if float64(x-bulletStartX)/float64(bulletEndX-bulletStartX) <= coneWidth {
+				bulletY := animatedY + y + int(spinOffset)
+				drawRect(dst, g.pix, x, bulletY, 1, 1, bulletTip)
+			}
 		}
 
-		// Choose color based on position
-		var colorBody color.Color
-		if relPos < 0.2 {
-			colorBody = bulletTip
-		} else if relPos < 0.7 {
-			colorBody = bulletBody
-		} else {
-			colorBody = bulletBase
+		// Next 50% - light grey body (cylinder)
+		bodyHeight := int(float64(size) * 0.5)
+		bodyStartY := coneHeight
+		for y := 0; y < bodyHeight; y++ {
+			bulletY := animatedY + bodyStartY + y + int(spinOffset)
+			drawRect(dst, g.pix, x, bulletY, 1, 1, bulletBody)
 		}
 
-		// Draw the bullet segment
-		bulletY := y + (size-spriteHeight)/2
-		drawRect(dst, g.pix, x, bulletY, 1, spriteHeight, colorBody)
+		// Bottom 10% - dark grey base (cylinder)
+		baseHeight := int(float64(size) * 0.1)
+		baseStartY := coneHeight + bodyHeight
+		for y := 0; y < baseHeight; y++ {
+			bulletY := animatedY + baseStartY + y + int(spinOffset)
+			drawRect(dst, g.pix, x, bulletY, 1, 1, bulletBase)
+		}
 
-		// Add outline
+		// Add metallic rim effect
 		if x == bulletStartX || x == bulletEndX {
-			drawRect(dst, g.pix, x, y, 1, size, color.RGBA{0, 0, 0, 120})
+			drawRect(dst, g.pix, x, animatedY, 1, size, bulletRim)
 		}
 	}
 }
