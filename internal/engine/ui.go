@@ -146,7 +146,7 @@ func (g *Game) drawPickupMessages(dst *ebiten.Image) {
 func (g *Game) drawMainMenu(dst *ebiten.Image) {
 	drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{0, 0, 0, 180})
 
-	w, h := 400, 300
+	w, h := 300, 180
 	x := (ScreenW - w) / 2
 	y := (ScreenH - h) / 2
 
@@ -157,10 +157,10 @@ func (g *Game) drawMainMenu(dst *ebiten.Image) {
 	drawRect(dst, g.pix, x+w-2, y, 2, h, uiAccent)
 
 	// Title
-	lx := x + 18
-	ly := y + 40
+	lx := x + 15
+	ly := y + 25
 	text.Draw(dst, "DOOMLIKE", g.face, lx, ly, uiAccent)
-	ly += 50
+	ly += 35
 
 	// Menu options
 	options := []string{"Start Game", "Options", "Quit"}
@@ -169,23 +169,17 @@ func (g *Game) drawMainMenu(dst *ebiten.Image) {
 		if i == g.menu.selectedOption {
 			color = yellow
 			// Draw selection indicator
-			text.Draw(dst, ">", g.face, lx-20, ly, color)
+			text.Draw(dst, ">", g.face, lx-15, ly, color)
 		}
 		text.Draw(dst, option, g.face, lx, ly, color)
-		ly += 30
+		ly += 20
 	}
-
-	// Instructions
-	ly += 20
-	text.Draw(dst, "Use ↑/↓ to navigate, Enter or click to select", g.face, lx, ly, gray)
-	ly += 20
-	text.Draw(dst, "Esc to quit", g.face, lx, ly, gray)
 }
 
 func (g *Game) drawInGameMenu(dst *ebiten.Image) {
 	drawRect(dst, g.pix, 0, 0, ScreenW, ScreenH, color.RGBA{0, 0, 0, 180})
 
-	w, h := 400, 250
+	w, h := 300, 160
 	x := (ScreenW - w) / 2
 	y := (ScreenH - h) / 2
 
@@ -196,10 +190,10 @@ func (g *Game) drawInGameMenu(dst *ebiten.Image) {
 	drawRect(dst, g.pix, x+w-2, y, 2, h, uiAccent)
 
 	// Title
-	lx := x + 18
-	ly := y + 40
+	lx := x + 15
+	ly := y + 25
 	text.Draw(dst, "PAUSED", g.face, lx, ly, uiAccent)
-	ly += 50
+	ly += 35
 
 	// Menu options
 	options := []string{"Resume Game", "Options", "Quit Game"}
@@ -208,17 +202,11 @@ func (g *Game) drawInGameMenu(dst *ebiten.Image) {
 		if i == g.menu.selectedInGameOption {
 			color = yellow
 			// Draw selection indicator
-			text.Draw(dst, ">", g.face, lx-20, ly, color)
+			text.Draw(dst, ">", g.face, lx-15, ly, color)
 		}
 		text.Draw(dst, option, g.face, lx, ly, color)
-		ly += 30
+		ly += 20
 	}
-
-	// Instructions
-	ly += 20
-	text.Draw(dst, "Use ↑/↓ to navigate, Enter or click to select", g.face, lx, ly, gray)
-	ly += 20
-	text.Draw(dst, "Esc to resume game", g.face, lx, ly, gray)
 }
 
 func (g *Game) drawOptionsMenu(dst *ebiten.Image) {

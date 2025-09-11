@@ -12,7 +12,7 @@ func (g *Game) drawMinimap(dst *ebiten.Image) {
 		return
 	}
 
-	const scale = 3
+	const scale = 7
 	const px, py = 10, 80
 
 	// frame
